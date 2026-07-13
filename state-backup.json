@@ -95,6 +95,13 @@
     }
   ],
   "currentSeasonId": "s1",
-  "bettors": [],
+  "bettors": [
+    {
+      "id": "id_1783932489106_dl8pv7",
+      "name": "噜噜",
+      "joinDate": "2026-07-13T08:48:09.106Z",
+      "coins": 10
+    }
+  ],
   "bets": []
 }
