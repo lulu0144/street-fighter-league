@@ -98,7 +98,7 @@
       "id": "id_1783932885752_k33jxq",
       "name": "7月月赛",
       "date": "2026-07-13T00:00:00.000Z",
-      "status": "upcoming",
+      "status": "active",
       "participants": [
         "p1",
         "p2",
@@ -109,7 +109,67 @@
         "p7",
         "p8"
       ],
-      "bracket": null
+      "bracket": {
+        "rounds": [
+          {
+            "label": "决赛",
+            "matches": [
+              {
+                "player1Id": null,
+                "player2Id": null,
+                "winnerId": null,
+                "score": null
+              }
+            ]
+          },
+          {
+            "label": "半决赛",
+            "matches": [
+              {
+                "player1Id": null,
+                "player2Id": null,
+                "winnerId": null,
+                "score": null
+              },
+              {
+                "player1Id": null,
+                "player2Id": null,
+                "winnerId": null,
+                "score": null
+              }
+            ]
+          },
+          {
+            "label": "四分之一决赛",
+            "matches": [
+              {
+                "player1Id": "p3",
+                "player2Id": "p2",
+                "winnerId": null,
+                "score": null
+              },
+              {
+                "player1Id": "p7",
+                "player2Id": "p5",
+                "winnerId": null,
+                "score": null
+              },
+              {
+                "player1Id": "p1",
+                "player2Id": "p6",
+                "winnerId": null,
+                "score": null
+              },
+              {
+                "player1Id": "p8",
+                "player2Id": "p4",
+                "winnerId": null,
+                "score": null
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "playoffs": [],
