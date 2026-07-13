@@ -220,7 +220,14 @@
       "createdBy": "system",
       "createdDate": "2026-07-13T09:09:28.969Z",
       "status": "open",
-      "predictions": {}
+      "predictions": {
+        "id_1783932840634_k3tt0p": {
+          "predictedWinnerId": "p1",
+          "predictedScore": "",
+          "sideBet": "饿饿",
+          "matchedBy": []
+        }
+      }
     }
   ]
 }
