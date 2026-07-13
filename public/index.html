@@ -309,6 +309,31 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 /* ===== Grid helpers ===== */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
+/* ===== Betting ===== */
+.betting-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg-input);border-radius:var(--radius-sm);padding:4px;width:fit-content}
+.betting-tab{padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);transition:all 0.2s;border:none;background:none}
+.betting-tab.active{background:var(--accent);color:#fff}
+.betting-tab:hover:not(.active){color:var(--text-primary)}
+.bet-card{padding:16px 20px}
+.bet-card .bet-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.bet-card .bet-title{font-size:15px;font-weight:600}
+.bet-card .bet-meta{font-size:11px;color:var(--text-muted)}
+.bet-card .bet-vs{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:18px;font-weight:700}
+.bet-card .bet-vs .vs-word{color:var(--accent);font-size:14px}
+.bet-card .bet-prediction{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-input);border-radius:var(--radius-sm);margin:4px 0;font-size:13px}
+.bet-card .bet-prediction.win{border-left:3px solid var(--success)}
+.bet-card .bet-prediction.lose{border-left:3px solid var(--danger)}
+.bet-card .bet-prediction.draw{border-left:3px solid var(--accent2)}
+.bet-card .bet-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.bet-result-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.bet-result-badge.win{background:rgba(46,213,115,0.2);color:var(--success)}
+.bet-result-badge.lose{background:rgba(255,71,87,0.2);color:var(--danger)}
+.bet-result-badge.draw{background:rgba(255,215,0,0.2);color:var(--accent2)}
+.side-bet-text{font-size:11px;color:var(--accent);font-style:italic}
+.coins-display{font-size:24px;font-weight:900;color:var(--accent2)}
+.coins-positive{color:var(--success)}
+.coins-negative{color:var(--danger)}
+
 /* ===== Filter Bar ===== */
 .filter-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .filter-bar select,.filter-bar input{
@@ -402,6 +427,9 @@ function getDefaultData() {
       { id:'s1', name:'2026夏季赛', startDate:'2026-06-01', endDate:'2026-08-31', status:'active', playoffs: null }
     ],
     currentSeasonId: 's1',
+    // 竞猜系统
+    bettors: [],
+    bets: [],
   };
 }
 
@@ -440,6 +468,10 @@ function getSeasonName() {
 
 function getPendingChallengesCount() {
   return STATE.challenges.filter(c => c.status === 'pending').length;
+}
+
+function getOpenBetsCount() {
+  return (STATE.bets || []).filter(b => b.status === 'open').length;
 }
 
 function getUpcomingTournaments() {
@@ -495,6 +527,7 @@ const NAV_ITEMS = [
   { id:'ladder', icon:'⚔️', label:'擂台挑战' },
   { id:'tournament', icon:'🏆', label:'月赛' },
   { id:'playoffs', icon:'👑', label:'季后赛' },
+  { id:'betting', icon:'🎲', label:'竞猜' },
   { id:'players', icon:'👥', label:'选手' },
   { id:'history', icon:'📋', label:'战绩' },
   { id:'rules', icon:'📖', label:'赛制规则' },
@@ -509,11 +542,12 @@ function renderSidebar() {
       <span class="nav-icon">${item.icon}</span>
       ${item.label}
       ${item.id === 'ladder' && getPendingChallengesCount() > 0 ? `<span class="badge">${getPendingChallengesCount()}</span>` : ''}
+      ${item.id === 'betting' && getOpenBetsCount() > 0 ? `<span class="badge" style="background:var(--accent3)">${getOpenBetsCount()}</span>` : ''}
     </div>
   `).join('');
 
   const footer = document.getElementById('sidebarFooter');
-  footer.textContent = `${getSeasonName()} · ${STATE.players.length}名选手`;
+  footer.textContent = `${getSeasonName()} · ${STATE.players.length}选手 · ${(STATE.bettors||[]).length}竞猜者`;
 }
 
 function navigate(pageId) {
@@ -531,6 +565,7 @@ function renderPage() {
     case 'ladder': renderLadder(header, content); break;
     case 'tournament': renderTournament(header, content); break;
     case 'playoffs': renderPlayoffs(header, content); break;
+    case 'betting': renderBetting(header, content); break;
     case 'players': renderPlayers(header, content); break;
     case 'history': renderHistory(header, content); break;
     case 'rules': renderRules(header, content); break;
@@ -876,6 +911,7 @@ function acceptChallenge(challengeId) {
     STATE.matches.push(match);
     updatePlayerStats(match);
     saveData();
+    autoSettleBets('challenge', { challengeId: c.id }, match.winnerId, match.score);
     toast('✅ 挑战结果已记录！', 'success');
     renderPage();
   });
@@ -884,6 +920,8 @@ function acceptChallenge(challengeId) {
 function declineChallenge(challengeId) {
   const c = STATE.challenges.find(ch => ch.id === challengeId);
   if (c) { c.status = 'declined'; saveData(); toast('挑战已拒绝', 'info'); renderPage(); }
+  // Clean up related bets for this challenge
+  STATE.bets = (STATE.bets || []).filter(b => !(b.gameType === 'challenge' && b.gameRef.challengeId === challengeId && b.status === 'open'));
 }
 
 // ============================================================
@@ -1083,6 +1121,7 @@ function showBracketMatchModal(tournamentId, roundIdx, matchIdx, slot) {
     STATE.matches.push(newMatch);
     updatePlayerStats(newMatch);
     saveData();
+    autoSettleBets('tournament', { tournamentId: t.id, roundIdx, matchIdx }, newMatch.winnerId, newMatch.score);
     toast('✅ 赛果已录入！', 'success');
     renderPage();
   });
@@ -1219,9 +1258,116 @@ function deleteTournament(tournamentId) {
   if (!confirm('确定要删除这个月赛吗？')) return;
   STATE.tournaments = STATE.tournaments.filter(t => t.id !== tournamentId);
   STATE.matches = STATE.matches.filter(m => m.tournamentId !== tournamentId);
+  // Clean up related bets
+  STATE.bets = (STATE.bets || []).filter(b => b.gameType !== 'tournament' || b.gameRef.tournamentId !== tournamentId);
   saveData();
   toast('已删除', 'info');
   renderPage();
+}
+
+// ============================================================
+// BETTING (竞猜)
+// ============================================================
+function getBettor(id) { return (STATE.bettors || []).find(b => b.id === id); }
+function bettorName(id) { const b = getBettor(id); return b ? b.name : '未知'; }
+
+function autoSettleBets(gameType, gameRef, actualWinnerId, actualScore) {
+  const bets = STATE.bets || [];
+  bets.forEach(bet => {
+    if (bet.status !== 'open') return;
+    if (bet.gameType !== gameType) return;
+
+    let matchFound = false;
+    if (gameType === 'challenge') {
+      matchFound = bet.gameRef.challengeId === gameRef.challengeId;
+    } else if (gameType === 'tournament') {
+      matchFound = bet.gameRef.tournamentId === gameRef.tournamentId &&
+                   bet.gameRef.roundIdx === gameRef.roundIdx &&
+                   bet.gameRef.matchIdx === gameRef.matchIdx;
+    } else if (gameType === 'playoffs') {
+      matchFound = bet.gameRef.roundIdx === gameRef.roundIdx &&
+                   bet.gameRef.matchIdx === gameRef.matchIdx;
+    }
+    if (!matchFound) return;
+
+    bet.actualWinnerId = actualWinnerId;
+    bet.actualScore = actualScore;
+    bet.status = 'settled';
+    bet.settledDate = new Date().toISOString();
+
+    Object.entries(bet.predictions || {}).forEach(([bettorId, pred]) => {
+      const bettor = getBettor(bettorId);
+      if (!bettor) return;
+      if (bet.betType === 'winner') {
+        if (pred.predictedWinnerId === actualWinnerId) {
+          bettor.coins = (bettor.coins || 0) + 1;
+          pred.result = 'win';
+        } else {
+          bettor.coins = (bettor.coins || 0) - 1;
+          pred.result = 'lose';
+        }
+      } else if (bet.betType === 'score') {
+        if (pred.predictedWinnerId !== actualWinnerId) {
+          bettor.coins = (bettor.coins || 0) - 1;
+          pred.result = 'lose';
+        } else if (pred.predictedScore === actualScore) {
+          bettor.coins = (bettor.coins || 0) + 1;
+          pred.result = 'win';
+        } else {
+          pred.result = 'draw';
+        }
+      }
+    });
+  });
+}
+
+function getBettableGames() {
+  const games = [];
+  (STATE.challenges || []).filter(c => c.status === 'pending').forEach(c => {
+    games.push({
+      id: 'challenge_' + c.id,
+      label: '\u2694\uFE0F \u64C2\u53F0: ' + playerName(c.challengerId) + ' vs ' + playerName(c.defenderId),
+      gameType: 'challenge',
+      gameRef: { challengeId: c.id },
+      player1Id: c.challengerId,
+      player2Id: c.defenderId,
+    });
+  });
+  (STATE.tournaments || []).filter(t => t.status === 'active' && t.bracket).forEach(t => {
+    t.bracket.rounds.forEach((round, ri) => {
+      round.matches.forEach((m, mi) => {
+        if (m.player1Id && m.player2Id && !m.winnerId) {
+          games.push({
+            id: 'tournament_' + t.id + '_' + ri + '_' + mi,
+            label: '\uD83C\uDFC6 \u6708\u8D5B ' + t.name + ' \u00B7 ' + round.label + ': ' + playerName(m.player1Id) + ' vs ' + playerName(m.player2Id),
+            gameType: 'tournament',
+            gameRef: { tournamentId: t.id, roundIdx: ri, matchIdx: mi },
+            player1Id: m.player1Id,
+            player2Id: m.player2Id,
+          });
+        }
+      });
+    });
+  });
+  const s = getSeason();
+  const po = s ? s.playoffs : null;
+  if (po && po.status === 'active' && po.bracket) {
+    po.bracket.rounds.forEach((round, ri) => {
+      round.matches.forEach((m, mi) => {
+        if (m.player1Id && m.player2Id && !m.winnerId) {
+          games.push({
+            id: 'playoffs_' + ri + '_' + mi,
+            label: '\uD83D\uDC51 \u5B63\u540E\u8D5B \u00B7 ' + round.label + ': ' + playerName(m.player1Id) + ' vs ' + playerName(m.player2Id),
+            gameType: 'playoffs',
+            gameRef: { roundIdx: ri, matchIdx: mi },
+            player1Id: m.player1Id,
+            player2Id: m.player2Id,
+          });
+        }
+      });
+    });
+  }
+  return games;
 }
 
 // ============================================================
@@ -1391,6 +1537,7 @@ function showPlayoffBracketModal(tournamentId, roundIdx, matchIdx, slot) {
     STATE.matches.push(newMatch);
     updatePlayerStats(newMatch);
     saveData();
+    autoSettleBets('playoffs', { roundIdx, matchIdx }, newMatch.winnerId, newMatch.score);
     toast('✅ 赛果已录入！', 'success');
     renderPage();
   });
@@ -1720,6 +1867,250 @@ function deletePlayer(playerId) {
 }
 
 // ============================================================
+// BETTING PAGE (竞猜)
+// ============================================================
+let bettingTab = 'open';
+
+function renderBetting(header, content) {
+  const bettors = STATE.bettors || [];
+  const bets = STATE.bets || [];
+  const openBets = bets.filter(b => b.status === 'open');
+  const settledBets = [...bets].filter(b => b.status === 'settled').sort((a,b) => new Date(b.settledDate||0) - new Date(a.settledDate||0));
+
+  header.innerHTML = `
+    <div>
+      <div class="page-title">🎲 竞猜中心</div>
+      <div class="page-subtitle">${bettors.length}名竞猜者 · ${openBets.length}场开放竞猜 · ${settledBets.length}场已结算</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showRegisterBettorModal()">${bettors.length ? '+ 注册竞猜者' : '🎯 注册成为竞猜者'}</button>
+      <button class="btn btn-outline btn-sm" onclick="showCreateBetModal()">🎲 发起竞猜</button>
+    </div>
+  `;
+
+  content.innerHTML = `
+    <div class="betting-tabs">
+      <button class="betting-tab ${bettingTab==='bettors'?'active':''}" onclick="setBettingTab('bettors')">👥 竞猜者</button>
+      <button class="betting-tab ${bettingTab==='open'?'active':''}" onclick="setBettingTab('open')">🎲 开放竞猜 ${openBets.length?'('+openBets.length+')':''}</button>
+      <button class="betting-tab ${bettingTab==='settled'?'active':''}" onclick="setBettingTab('settled')">📋 已结算 ${settledBets.length?'('+settledBets.length+')':''}</button>
+    </div>
+    <div id="bettingTabContent">${renderBettingTab()}</div>
+  `;
+}
+
+function setBettingTab(tab) {
+  bettingTab = tab;
+  const tc = document.getElementById('bettingTabContent');
+  if (tc) tc.innerHTML = renderBettingTab();
+  document.querySelectorAll('.betting-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.trim().startsWith(tab==='bettors'?'\uD83D\uDC65':tab==='open'?'\uD83C\uDFB2':'\uD83D\uDCCB'));
+  });
+}
+
+function renderBettingTab() {
+  if (bettingTab === 'bettors') return renderBettorsTab();
+  if (bettingTab === 'open') return renderOpenBetsTab();
+  return renderSettledBetsTab();
+}
+
+function renderBettorsTab() {
+  const bettors = [...(STATE.bettors || [])].sort((a,b) => (b.coins||0) - (a.coins||0));
+  if (!bettors.length) {
+    return '<div class="card"><div class="empty-state"><div class="empty-icon">🎲</div><p>还没有竞猜者注册</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="showRegisterBettorModal()">成为第一个竞猜者</button></div></div>';
+  }
+  return '<div class="card"><table><thead><tr><th>排名</th><th>竞猜者</th><th>竞猜币</th><th>胜/负/平</th><th>注册日期</th><th></th></tr></thead><tbody>'
+    + bettors.map((b, i) => {
+      let wins = 0, losses = 0, draws = 0;
+      (STATE.bets || []).forEach(bet => {
+        if (bet.status==='settled' && bet.predictions && bet.predictions[b.id]) {
+          const r = bet.predictions[b.id].result;
+          if (r==='win') wins++; else if (r==='lose') losses++; else if (r==='draw') draws++;
+        }
+      });
+      const c = b.coins || 0;
+      return '<tr><td><span class="rank-badge rank-'+(i<3?i+1:'other')+'">'+(i+1)+'</span></td>'
+        + '<td><span style="font-weight:600">'+b.name+'</span></td>'
+        + '<td><span class="'+(c>0?'coins-positive':c<0?'coins-negative':'')+'" style="font-weight:700;font-size:16px">'+(c>0?'+'+c:c)+'</span> 🪙</td>'
+        + '<td><span style="color:var(--success)">'+wins+'W</span> / <span style="color:var(--danger)">'+losses+'L</span> / <span style="color:var(--accent2)">'+draws+'D</span></td>'
+        + '<td>'+fmtDate(b.joinDate)+'</td>'
+        + '<td><button class="btn btn-outline btn-sm" onclick="unregisterBettor(\''+b.id+'\')" style="color:var(--danger);font-size:11px">注销</button></td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+
+function renderOpenBetsTab() {
+  const bets = (STATE.bets || []).filter(b => b.status === 'open');
+  if (!bets.length) {
+    return '<div class="card"><div class="empty-state"><div class="empty-icon">🎲</div><p>暂无开放竞猜</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="showCreateBetModal()">发起一场竞猜</button></div></div>';
+  }
+  return bets.map(bet => renderBetCard(bet)).join('');
+}
+
+function renderSettledBetsTab() {
+  const bets = [...(STATE.bets || [])].filter(b => b.status === 'settled').sort((a,b) => new Date(b.settledDate||0) - new Date(a.settledDate||0));
+  if (!bets.length) {
+    return '<div class="card"><div class="empty-state"><div class="empty-icon">📋</div><p>暂无已结算竞猜</p></div></div>';
+  }
+  return bets.map(bet => renderBetCard(bet)).join('');
+}
+
+function renderBetCard(bet) {
+  const tl = { challenge:'⚔️ 擂台', tournament:'🏆 月赛', playoffs:'👑 季后赛' };
+  const btl = bet.betType === 'winner' ? '猜胜者' : '猜比分';
+  const preds = Object.entries(bet.predictions || {});
+
+  let h = '<div class="card bet-card" style="border-left:3px solid '+(bet.status==='open'?'var(--accent3)':'var(--text-muted)')+'">';
+  h += '<div class="bet-header"><div>';
+  h += '<div class="bet-title">'+(tl[bet.gameType]||bet.gameType)+' · '+btl+'</div>';
+  h += '<div class="bet-meta">'+fmtDateTime(bet.createdDate)+' · '+(bet.status==='open'?'进行中':'已结算')+'</div></div>';
+  h += '<div style="display:flex;gap:6px;align-items:center">';
+  h += (bet.status==='open'
+    ? '<span class="status" style="background:var(--accent3);color:#fff">开放</span>'
+    : '<span class="status" style="background:var(--text-muted);color:#fff">已结算</span>');
+  if (bet.status==='open') h += '<button class="btn btn-outline btn-sm" onclick="deleteBet(\''+bet.id+'\')">🗑</button>';
+  h += '</div></div>';
+
+  h += '<div class="bet-vs"><span>'+bet.player1Name+'</span><span class="vs-word">VS</span><span>'+bet.player2Name+'</span></div>';
+
+  if (bet.status==='settled') {
+    h += '<div style="font-size:14px;margin-bottom:8px;color:var(--accent)">🏆 实际结果：<strong>'+playerName(bet.actualWinnerId)+'</strong> 胜'
+      + (bet.betType==='score' && bet.actualScore ? ' (比分 '+bet.actualScore+')' : '') + '</div>';
+  }
+
+  if (preds.length > 0) {
+    h += '<div style="margin:8px 0"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">'+preds.length+'人参与竞猜：</div>';
+    preds.forEach(([bid, pred]) => {
+      const bb = getBettor(bid);
+      const name = bb ? bb.name : bettorName(bid);
+      const rc = bet.status==='settled' ? (pred.result||'') : '';
+      const myId = (STATE.bettors||[])[0]?.id;
+      h += '<div class="bet-prediction '+rc+'">';
+      h += '<span style="font-weight:600;min-width:80px">'+name+'</span> ';
+      h += '<span style="color:var(--text-secondary)">预测</span> ';
+      h += '<span style="font-weight:600;color:var(--accent)">'+playerName(pred.predictedWinnerId)+'</span> ';
+      h += '<span style="color:var(--text-secondary)">胜</span>';
+      if (bet.betType==='score' && pred.predictedScore) h += '<span style="color:var(--text-muted);font-size:12px">('+pred.predictedScore+')</span>';
+      if (rc) h += '<span class="bet-result-badge '+rc+'">'+(rc==='win'?'✅ +1':rc==='lose'?'❌ -1':'➖ 0')+'</span>';
+      if (pred.sideBet) h += '<span class="side-bet-text">「'+pred.sideBet+'」</span>';
+      if (bet.status==='open' && bid===myId) h += '<button class="btn btn-outline btn-sm" onclick="modifyPrediction(\''+bet.id+'\')" style="margin-left:auto;font-size:10px">修改</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<div style="font-size:12px;color:var(--text-muted);margin:8px 0">暂无竞猜者参与</div>';
+  }
+
+  if (bet.status==='open') {
+    h += '<div class="bet-actions"><button class="btn btn-primary btn-sm" onclick="showJoinBetModal(\''+bet.id+'\')">🎯 参与竞猜</button></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function showRegisterBettorModal() {
+  const html = '<p style="margin-bottom:12px;color:var(--text-secondary)">注册后即可参与比赛竞猜，初始获得 <strong style="color:var(--accent)">10</strong> 竞猜币</p>'
+    + '<div class="form-group"><label>你的昵称</label><input id="bettorName" placeholder="输入昵称"></div>';
+  showModal('注册竞猜者', html, () => {
+    const name = document.getElementById('bettorName').value.trim();
+    if (!name) { toast('请输入昵称', 'error'); return; }
+    STATE.bettors = STATE.bettors || [];
+    if (STATE.bettors.find(b => b.name === name)) { toast('该昵称已被注册', 'error'); return; }
+    STATE.bettors.push({ id: gid(), name, joinDate: new Date().toISOString(), coins: 10 });
+    saveData(); toast('🎲 注册成功！获得 10 竞猜币', 'success'); renderPage();
+  });
+}
+
+function unregisterBettor(id) {
+  const b = getBettor(id);
+  if (!b || !confirm('确定注销竞猜者「'+b.name+'」吗？竞猜记录将保留。')) return;
+  STATE.bettors = (STATE.bettors || []).filter(bb => bb.id !== id);
+  saveData(); toast('已注销', 'info'); renderPage();
+}
+
+function showCreateBetModal() {
+  const games = getBettableGames();
+  if (!games.length) { toast('当前没有可竞猜的比赛（需要先有未完成的擂台挑战/月赛对阵/季后赛对阵）', 'info'); return; }
+  const html = '<div class="form-group"><label>选择比赛</label><select id="betGame">'
+    + games.map(g => '<option value="'+g.id+'">'+g.label+'</option>').join('')
+    + '</select></div><div class="form-group"><label>竞猜类型</label>'
+    + '<select id="betType"><option value="winner">猜胜者</option><option value="score">猜比分</option></select></div>';
+  showModal('发起竞猜', html, () => {
+    const gidVal = document.getElementById('betGame').value;
+    const bt = document.getElementById('betType').value;
+    const game = games.find(g => g.id === gidVal);
+    if (!game) return;
+    STATE.bets = STATE.bets || [];
+    const ex = STATE.bets.find(b => {
+      if (b.status !== 'open' || b.gameType !== game.gameType) return false;
+      if (game.gameType === 'challenge') return b.gameRef.challengeId === game.gameRef.challengeId;
+      if (game.gameType === 'tournament') return b.gameRef.tournamentId === game.gameRef.tournamentId
+        && b.gameRef.roundIdx === game.gameRef.roundIdx && b.gameRef.matchIdx === game.gameRef.matchIdx;
+      if (game.gameType === 'playoffs') return b.gameRef.roundIdx === game.gameRef.roundIdx
+        && b.gameRef.matchIdx === game.gameRef.matchIdx;
+      return false;
+    });
+    if (ex) { toast('该比赛已有开放竞猜', 'error'); return; }
+    createBet(game.gameType, game.gameRef, game.player1Id, game.player2Id, bt);
+    saveData(); toast('🎲 竞猜已发起！', 'success'); renderPage();
+  });
+}
+
+function showJoinBetModal(betId) {
+  const bet = (STATE.bets || []).find(b => b.id === betId);
+  if (!bet) return;
+  const bettors = STATE.bettors || [];
+  if (!bettors.length) { toast('请先注册成为竞猜者', 'info'); return; }
+  const html = '<div class="form-group"><label>选择竞猜者</label><select id="joinBettor">'
+    + bettors.map(b => '<option value="'+b.id+'">'+b.name+' (🪙'+(b.coins||0)+')</option>').join('')
+    + '</select></div><div class="form-group"><label>预测胜者</label><select id="joinWinner">'
+    + '<option value="'+bet.player1Id+'">'+bet.player1Name+'</option><option value="'+bet.player2Id+'">'+bet.player2Name+'</option>'
+    + '</select></div>'
+    + (bet.betType === 'score' ? '<div class="form-group"><label>预测比分 (例如: 2-1)</label><input id="joinScore" placeholder="2-0 / 2-1 / 3-2 ..." value="2-0"></div>' : '')
+    + '<div class="form-group"><label>口头赌注 (可选)</label><input id="joinSideBet" placeholder="例如: 一顿午餐、一杯奶茶..."></div>'
+    + '<p style="font-size:11px;color:var(--text-muted);margin-top:4px">竞猜币规则：猜对 +1🪙 | 猜错 -1🪙 | 猜比分模式下胜者对比分错不扣不加</p>';
+  showModal('参与竞猜', html, () => {
+    const bettorId = document.getElementById('joinBettor').value;
+    bet.predictions = bet.predictions || {};
+    bet.predictions[bettorId] = {
+      predictedWinnerId: document.getElementById('joinWinner').value,
+      predictedScore: bet.betType === 'score' ? (document.getElementById('joinScore')?.value || '') : '',
+      sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
+    };
+    saveData(); toast('✅ 竞猜已提交！', 'success'); renderPage();
+  });
+}
+
+function modifyPrediction(betId) {
+  const bet = (STATE.bets || []).find(b => b.id === betId);
+  if (!bet || bet.status !== 'open') { toast('竞猜已结算，无法修改', 'info'); return; }
+  const bettors = STATE.bettors || [];
+  if (!bettors.length) return;
+  const myId = bettors[0].id;
+  const pred = (bet.predictions || {})[myId];
+  if (!pred) { toast('你尚未参与此竞猜', 'info'); return; }
+  const html = '<div class="form-group"><label>预测胜者</label><select id="joinWinner">'
+    + '<option value="'+bet.player1Id+'"'+(pred.predictedWinnerId===bet.player1Id?' selected':'')+'>'+bet.player1Name+'</option>'
+    + '<option value="'+bet.player2Id+'"'+(pred.predictedWinnerId===bet.player2Id?' selected':'')+'>'+bet.player2Name+'</option>'
+    + '</select></div>'
+    + (bet.betType==='score' ? '<div class="form-group"><label>预测比分</label><input id="joinScore" value="'+(pred.predictedScore||'2-0')+'"></div>' : '')
+    + '<div class="form-group"><label>口头赌注</label><input id="joinSideBet" value="'+(pred.sideBet||'')+'"></div>';
+  showModal('修改预测', html, () => {
+    bet.predictions = bet.predictions || {};
+    bet.predictions[myId] = {
+      predictedWinnerId: document.getElementById('joinWinner').value,
+      predictedScore: bet.betType==='score' ? (document.getElementById('joinScore')?.value || '') : '',
+      sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
+    };
+    saveData(); toast('✅ 预测已更新', 'success'); renderPage();
+  });
+}
+
+function deleteBet(betId) {
+  if (!confirm('确定删除此竞猜吗？')) return;
+  STATE.bets = (STATE.bets || []).filter(b => b.id !== betId);
+  saveData(); toast('竞猜已删除', 'info'); renderPage();
+}
+
+// ============================================================
 // HISTORY
 // ============================================================
 function renderHistory(header, content) {
@@ -1973,6 +2364,10 @@ async function init() {
   // Recalculate stats from matches
   STATE.players.forEach(p => { p.wins = 0; p.losses = 0; p.points = 0; });
   STATE.matches.forEach(m => updatePlayerStats(m));
+
+  // Ensure betting data exists (migration from older versions)
+  if (!STATE.bettors) STATE.bettors = [];
+  if (!STATE.bets) STATE.bets = [];
 
   saveData();
   renderSidebar();
