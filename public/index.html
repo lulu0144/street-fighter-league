@@ -2267,7 +2267,7 @@ function renderRules(header, content) {
       <p>我们理解大家工作繁忙，<strong style="color:var(--accent)">不需要每周都打</strong>。采用"月赛+擂台"双轨制，最大化灵活性和参与感。</p>
       <ul>
         <li><strong>月赛</strong>：每月1次正式比赛日，固定时间全员参与，有仪式感</li>
-        <li><strong>擂台</strong>：日常自由挑战，想打就打，纯自愿，赢一场赚10分</li>
+        <li><strong>擂台</strong>：日常自由挑战，想打就打，纯自愿，赢一场赚5分</li>
       </ul>
     </div>
 
@@ -2298,7 +2298,7 @@ function renderRules(header, content) {
           <li>可随时向排名高于自己的选手发起挑战</li>
           <li>被挑战者需在3天内响应</li>
           <li>挑战赛制：BO3（三局两胜）</li>
-          <li>胜者 <strong style="color:var(--accent)">+10分</strong>，负者不扣分</li>
+          <li>胜者 <strong style="color:var(--accent)">+5分</strong>，负者不扣分</li>
         </ul>
       </div>
     </div>
@@ -2343,10 +2343,10 @@ function updatePlayerStats(match) {
   if (!p1 || !p2) return;
   if (match.winnerId === match.player1Id) {
     p1.wins++; p2.losses++;
-    if (match.type === 'ladder') p1.points += 10;
+    if (match.type === 'ladder') p1.points += 5;
   } else if (match.winnerId === match.player2Id) {
     p2.wins++; p1.losses++;
-    if (match.type === 'ladder') p2.points += 10;
+    if (match.type === 'ladder') p2.points += 5;
   }
 }
 
