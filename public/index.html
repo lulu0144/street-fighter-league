@@ -1983,14 +1983,29 @@ function renderBetCard(bet) {
       const name = bb ? bb.name : bettorName(bid);
       const rc = bet.status==='settled' ? (pred.result||'') : '';
       const myId = (STATE.bettors||[])[0]?.id;
+      const mb = pred.matchedBy || [];
       h += '<div class="bet-prediction '+rc+'">';
       h += '<span style="font-weight:600;min-width:80px">'+name+'</span> ';
       h += '<span style="color:var(--text-secondary)">预测</span> ';
       h += '<span style="font-weight:600;color:var(--accent)">'+playerName(pred.predictedWinnerId)+'</span> ';
       h += '<span style="color:var(--text-secondary)">胜</span>';
       if (bet.betType==='score' && pred.predictedScore) h += '<span style="color:var(--text-muted);font-size:12px">('+pred.predictedScore+')</span>';
-      if (rc) h += '<span class="bet-result-badge '+rc+'">'+(rc==='win'?'✅ +1':rc==='lose'?'❌ -1':'➖ 0')+'</span>';
-      if (pred.sideBet) h += '<span class="side-bet-text">「'+pred.sideBet+'」</span>';
+      if (rc) h += '<span class="bet-result-badge '+rc+'">'+(rc==='win'?'✅':rc==='lose'?'❌':'➖')+'</span>';
+      if (pred.sideBet) {
+        h += '<span class="side-bet-text">「'+pred.sideBet+'」</span>';
+        if (mb.length > 0) h += '<span style="color:var(--accent3);font-size:10px"> 已跟注: '+mb.map(id => bettorName(id)).join('、')+'</span>';
+      }
+      // Follow/unfollow buttons for other people's sideBets (open bets only)
+      if (bet.status==='open' && bid!==myId && myId && pred.sideBet) {
+        const myPred = (bet.predictions||{})[myId];
+        if (myPred) {
+          if (mb.includes(myId)) {
+            h += '<button class="btn btn-outline btn-sm" onclick="unfollowSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px" title="取消跟注">🔕 取消</button>';
+          } else {
+            h += '<button class="btn btn-primary btn-sm" onclick="followSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px">🤝 跟上</button>';
+          }
+        }
+      }
       if (bet.status==='open' && bid===myId) h += '<button class="btn btn-outline btn-sm" onclick="modifyPrediction(\''+bet.id+'\')" style="margin-left:auto;font-size:10px">修改</button>';
       h += '</div>';
     });
@@ -2090,13 +2105,45 @@ function showJoinBetModal(betId) {
   showModal('参与竞猜', html, () => {
     const bettorId = document.getElementById('joinBettor').value;
     bet.predictions = bet.predictions || {};
+    // Preserve existing matchedBy if this bettor is re-joining
+    const oldPred = bet.predictions[bettorId];
     bet.predictions[bettorId] = {
       predictedWinnerId: document.getElementById('joinWinner').value,
       predictedScore: bet.betType === 'score' ? (document.getElementById('joinScore')?.value || '') : '',
       sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
+      matchedBy: oldPred ? (oldPred.matchedBy || []) : [],
     };
     saveData(); toast('✅ 竞猜已提交！', 'success'); renderPage();
   });
+}
+
+function followSideBet(betId, targetBettorId) {
+  const bet = (STATE.bets || []).find(b => b.id === betId);
+  if (!bet || bet.status !== 'open') { toast('竞猜已结算', 'info'); return; }
+  const bettors = STATE.bettors || [];
+  if (!bettors.length) { toast('请先注册竞猜者', 'info'); return; }
+  const myId = bettors[0].id;
+  if (myId === targetBettorId) { toast('不能跟自己跟注', 'error'); return; }
+  const myPred = (bet.predictions || {})[myId];
+  if (!myPred) { toast('请先参与竞猜再跟注', 'info'); return; }
+  const targetPred = (bet.predictions || {})[targetBettorId];
+  if (!targetPred || !targetPred.sideBet) { toast('该竞猜者没有口头赌注', 'info'); return; }
+  targetPred.matchedBy = targetPred.matchedBy || [];
+  if (targetPred.matchedBy.includes(myId)) { toast('你已经跟过这个赌注了', 'info'); return; }
+  targetPred.matchedBy.push(myId);
+  saveData(); toast('✅ 已跟上「'+targetPred.sideBet+'」', 'success'); renderPage();
+}
+
+function unfollowSideBet(betId, targetBettorId) {
+  const bet = (STATE.bets || []).find(b => b.id === betId);
+  if (!bet || bet.status !== 'open') { toast('竞猜已结算', 'info'); return; }
+  const bettors = STATE.bettors || [];
+  if (!bettors.length) return;
+  const myId = bettors[0].id;
+  const targetPred = (bet.predictions || {})[targetBettorId];
+  if (!targetPred || !targetPred.matchedBy) return;
+  targetPred.matchedBy = targetPred.matchedBy.filter(id => id !== myId);
+  saveData(); toast('已取消跟注', 'info'); renderPage();
 }
 
 function modifyPrediction(betId) {
@@ -2119,6 +2166,7 @@ function modifyPrediction(betId) {
       predictedWinnerId: document.getElementById('joinWinner').value,
       predictedScore: bet.betType==='score' ? (document.getElementById('joinScore')?.value || '') : '',
       sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
+      matchedBy: pred.matchedBy || [],
     };
     saveData(); toast('✅ 预测已更新', 'success'); renderPage();
   });
@@ -2388,6 +2436,12 @@ async function init() {
   // Ensure betting data exists (migration from older versions)
   if (!STATE.bettors) STATE.bettors = [];
   if (!STATE.bets) STATE.bets = [];
+  // Migrate predictions: add matchedBy array to old predictions
+  (STATE.bets || []).forEach(bet => {
+    Object.values(bet.predictions || {}).forEach(p => {
+      if (!p.matchedBy) p.matchedBy = [];
+    });
+  });
 
   saveData();
   renderSidebar();
