@@ -94,7 +94,5 @@
       "status": "active"
     }
   ],
-  "currentSeasonId": "s1",
-  "bettors": [],
-  "bets": []
+  "currentSeasonId": "s1"
 }
