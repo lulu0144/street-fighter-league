@@ -201,6 +201,12 @@
       "name": "44",
       "joinDate": "2026-07-13T08:56:06.799Z",
       "coins": 10
+    },
+    {
+      "id": "id_1783934258299_m08215",
+      "name": "11",
+      "joinDate": "2026-07-13T09:17:38.299Z",
+      "coins": 10
     }
   ],
   "bets": [
@@ -222,12 +228,14 @@
         "id_1783932840634_k3tt0p": {
           "predictedWinnerId": "p5",
           "predictedScore": "",
-          "sideBet": "一杯可乐"
+          "sideBet": "一杯可乐",
+          "matchedBy": []
         },
         "id_1783932966799_cv0aik": {
           "predictedWinnerId": "p5",
           "predictedScore": "",
-          "sideBet": ""
+          "sideBet": "",
+          "matchedBy": []
         }
       }
     },
