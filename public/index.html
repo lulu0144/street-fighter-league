@@ -2054,6 +2054,26 @@ function showCreateBetModal() {
   });
 }
 
+function createBet(gameType, gameRef, player1Id, player2Id, betType) {
+  const p1 = getPlayer(player1Id);
+  const p2 = getPlayer(player2Id);
+  STATE.bets = STATE.bets || [];
+  STATE.bets.push({
+    id: gid(),
+    gameType,
+    gameRef,
+    player1Id,
+    player2Id,
+    player1Name: p1 ? p1.name : '?',
+    player2Name: p2 ? p2.name : '?',
+    betType,
+    createdBy: 'system',
+    createdDate: new Date().toISOString(),
+    status: 'open',
+    predictions: {},
+  });
+}
+
 function showJoinBetModal(betId) {
   const bet = (STATE.bets || []).find(b => b.id === betId);
   if (!bet) return;
