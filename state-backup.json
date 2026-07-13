@@ -82,8 +82,36 @@
     }
   ],
   "matches": [],
-  "challenges": [],
-  "tournaments": [],
+  "challenges": [
+    {
+      "id": "id_1783932854488_at3j6f",
+      "challengerId": "p3",
+      "defenderId": "p5",
+      "status": "pending",
+      "createdDate": "2026-07-13T08:54:14.488Z",
+      "score": null,
+      "winnerId": null
+    }
+  ],
+  "tournaments": [
+    {
+      "id": "id_1783932885752_k33jxq",
+      "name": "7月月赛",
+      "date": "2026-07-13T00:00:00.000Z",
+      "status": "upcoming",
+      "participants": [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8"
+      ],
+      "bracket": null
+    }
+  ],
   "playoffs": [],
   "seasons": [
     {
@@ -94,5 +122,14 @@
       "status": "active"
     }
   ],
-  "currentSeasonId": "s1"
+  "currentSeasonId": "s1",
+  "bettors": [
+    {
+      "id": "id_1783932840634_k3tt0p",
+      "name": "噜噜",
+      "joinDate": "2026-07-13T08:54:00.634Z",
+      "coins": 10
+    }
+  ],
+  "bets": []
 }
