@@ -1311,7 +1311,7 @@ function autoSettleBets(gameType, gameRef, actualWinnerId, actualScore) {
           bettor.coins = (bettor.coins || 0) - 1;
           pred.result = 'lose';
         } else if (pred.predictedScore === actualScore) {
-          bettor.coins = (bettor.coins || 0) + 1;
+          bettor.coins = (bettor.coins || 0) + 2;
           pred.result = 'win';
         } else {
           pred.result = 'draw';
@@ -2066,7 +2066,7 @@ function showJoinBetModal(betId) {
     + '</select></div>'
     + (bet.betType === 'score' ? '<div class="form-group"><label>预测比分 (例如: 2-1)</label><input id="joinScore" placeholder="2-0 / 2-1 / 3-2 ..." value="2-0"></div>' : '')
     + '<div class="form-group"><label>口头赌注 (可选)</label><input id="joinSideBet" placeholder="例如: 一顿午餐、一杯奶茶..."></div>'
-    + '<p style="font-size:11px;color:var(--text-muted);margin-top:4px">竞猜币规则：猜对 +1🪙 | 猜错 -1🪙 | 猜比分模式下胜者对比分错不扣不加</p>';
+    + '<p style="font-size:11px;color:var(--text-muted);margin-top:4px">竞猜币规则：猜对 +1🪙 | 猜错 -1🪙 | 猜比分模式猜对 +2🪙，猜错 -1🪙</p>';
   showModal('参与竞猜', html, () => {
     const bettorId = document.getElementById('joinBettor').value;
     bet.predictions = bet.predictions || {};
