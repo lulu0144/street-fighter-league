@@ -399,7 +399,7 @@ function getDefaultData() {
     challenges: [],
     tournaments: [],
     seasons: [
-      { id:'s1', name:'2026夏季赛', startDate:'2026-06-01', endDate:'2026-08-31', status:'active' }
+      { id:'s1', name:'2026夏季赛', startDate:'2026-06-01', endDate:'2026-08-31', status:'active', playoffs: null }
     ],
     currentSeasonId: 's1',
   };
@@ -494,10 +494,13 @@ const NAV_ITEMS = [
   { id:'dashboard', icon:'🏠', label:'首页' },
   { id:'ladder', icon:'⚔️', label:'擂台挑战' },
   { id:'tournament', icon:'🏆', label:'月赛' },
+  { id:'playoffs', icon:'👑', label:'季后赛' },
   { id:'players', icon:'👥', label:'选手' },
   { id:'history', icon:'📋', label:'战绩' },
   { id:'rules', icon:'📖', label:'赛制规则' },
 ];
+
+const PLAYOFF_QUALIFY_COUNT = 8; // 前几名进入季后赛
 
 function renderSidebar() {
   const nav = document.getElementById('sidebarNav');
@@ -527,6 +530,7 @@ function renderPage() {
     case 'dashboard': renderDashboard(header, content); break;
     case 'ladder': renderLadder(header, content); break;
     case 'tournament': renderTournament(header, content); break;
+    case 'playoffs': renderPlayoffs(header, content); break;
     case 'players': renderPlayers(header, content); break;
     case 'history': renderHistory(header, content); break;
     case 'rules': renderRules(header, content); break;
@@ -630,6 +634,38 @@ function renderDashboard(header, content) {
         <button class="btn btn-primary" style="margin-left:auto" onclick="navigate('tournament')">查看详情</button>
       </div>
     </div>` : ''}
+
+    ${(() => {
+      const s = getSeason();
+      const p = s ? s.playoffs : null;
+      if (p && p.status === 'completed') {
+        const champ = getPlayer(p.championId);
+        return `<div class="card" style="border-left:3px solid var(--accent);background:linear-gradient(135deg, #fffef5 0%, #fff8e1 100%)">
+          <div class="card-header">
+            <div class="card-title">👑 ${s.name} 总冠军</div>
+            <button class="btn btn-outline btn-sm" onclick="navigate('playoffs')">查看详情</button>
+          </div>
+          <div style="font-size:36px;font-weight:900;color:var(--accent)">🏆 ${champ ? champ.name : '—'}</div>
+          <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">${champ ? champ.character : ''} · 季后赛冠军</div>
+        </div>`;
+      }
+      if (p && p.status === 'active') {
+        return `<div class="card" style="border-left:3px solid var(--accent)">
+          <div class="card-header">
+            <div class="card-title">👑 季后赛进行中</div>
+            <button class="btn btn-primary btn-sm" onclick="navigate('playoffs')">进入赛场</button>
+          </div>
+          <div style="font-size:15px;color:var(--text-secondary)">前${p.qualifierCount}名淘汰赛 · 冠军+200分!</div>
+        </div>`;
+      }
+      return `<div class="card" style="border-left:3px solid var(--accent);opacity:0.8">
+        <div class="card-header">
+          <div class="card-title">👑 季后赛</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('playoffs')">查看资格</button>
+        </div>
+        <div style="font-size:14px;color:var(--text-secondary)">常规赛前${PLAYOFF_QUALIFY_COUNT}名晋级 · 赛季末开启</div>
+      </div>`;
+    })()}
   `;
 }
 
@@ -1188,6 +1224,343 @@ function deleteTournament(tournamentId) {
   renderPage();
 }
 
+// ============================================================
+// PLAYOFFS (季后赛)
+// ============================================================
+function getSeason() {
+  return STATE.seasons.find(s => s.id === STATE.currentSeasonId);
+}
+
+function getPlayoffs() {
+  const s = getSeason();
+  return s ? s.playoffs : null;
+}
+
+function generateSeededBracket(rankedIds) {
+  // Seeded bracket: 1v8, 4v5, 2v7, 3v6  (standard seeding)
+  const n = rankedIds.length;
+  // Pad to power of 2
+  let size = 1;
+  while (size < n) size *= 2;
+  const padded = [...rankedIds];
+  while (padded.length < size) padded.push(null);
+
+  // Standard seeding order for power-of-2 brackets
+  function seedOrder(num) {
+    const arr = [];
+    for (let i = 0; i < num; i++) arr.push(i);
+    function reorder(a) {
+      if (a.length <= 2) return a;
+      const mid = a.length / 2;
+      const top = a.slice(0, mid);
+      const bottom = a.slice(mid);
+      return [...reorder(top), ...reorder(bottom)];
+    }
+    return reorder(arr);
+  }
+
+  const order = seedOrder(size);
+  const seeded = order.map(i => i < n ? padded[i] : null);
+
+  const rounds = [];
+  const roundNames = {2:'决赛',4:'半决赛',8:'四分之一决赛',16:'八分之一决赛',32:'16强赛'};
+  let currentRound = seeded;
+  let roundNum = 1;
+
+  while (currentRound.length >= 2) {
+    const matches = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      matches.push({
+        player1Id: currentRound[i] || null,
+        player2Id: currentRound[i+1] || null,
+        winnerId: null,
+        score: null,
+      });
+    }
+    rounds.push({
+      label: roundNames[currentRound.length] || `第${roundNum}轮`,
+      matches,
+    });
+    currentRound = new Array(currentRound.length / 2).fill(null);
+    roundNum++;
+  }
+
+  return { rounds: rounds.reverse() };
+}
+
+function startPlayoffs() {
+  const s = getSeason();
+  if (!s) return;
+
+  const ranked = getRankedPlayers();
+  const count = Math.min(PLAYOFF_QUALIFY_COUNT, ranked.length);
+  if (count < 2) { toast('至少需要2名选手才能开启季后赛', 'error'); return; }
+
+  const qualifiers = ranked.slice(0, count).map(p => p.id);
+
+  s.playoffs = {
+    status: 'active',
+    qualifierCount: count,
+    qualifiers,
+    bracket: generateSeededBracket(qualifiers),
+    championId: null,
+  };
+  saveData();
+  toast(`👑 季后赛已开启！前${count}名晋级`, 'success');
+  renderPage();
+}
+
+function showPlayoffBracketModal(tournamentId, roundIdx, matchIdx, slot) {
+  // Reuse the same bracket-modal logic but for playoffs
+  const s = getSeason();
+  if (!s || !s.playoffs) return;
+  const match = s.playoffs.bracket.rounds[roundIdx].matches[matchIdx];
+  const pId = slot === 1 ? match.player1Id : match.player2Id;
+
+  const makeOpts = (selectedId) =>
+    `<option value="">-- 选择选手 --</option>` +
+    `<option value="__bye__" ${!selectedId ? 'selected' : ''}>🚫 轮空</option>` +
+    STATE.players.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${p.name} (${p.character})</option>`).join('');
+
+  const html = `
+    <div class="form-group">
+      <label>选手A</label>
+      <select id="bmPlayer1">${makeOpts(match.player1Id)}</select>
+    </div>
+    <div class="form-group">
+      <label>选手B</label>
+      <select id="bmPlayer2">${makeOpts(match.player2Id)}</select>
+    </div>
+    <div class="form-group" id="bmScoreGroup">
+      <label>比分</label>
+      <input id="bmScore" placeholder="2-0 / 2-1" value="${match.score||''}">
+    </div>
+    <div class="form-group" id="bmWinnerGroup">
+      <label>胜者</label>
+      <select id="bmWinner">
+        <option value="">-- 选择胜者 --</option>
+        <option value="p1">选手A</option>
+        <option value="p2">选手B</option>
+      </select>
+    </div>
+  `;
+
+  showModal('录入季后赛结果', html, () => {
+    const p1 = document.getElementById('bmPlayer1').value;
+    const p2 = document.getElementById('bmPlayer2').value;
+    const score = document.getElementById('bmScore').value;
+    const winner = document.getElementById('bmWinner').value;
+
+    // Handle bye
+    if (p1 === '__bye__' || p2 === '__bye__') {
+      const realPlayer = p1 === '__bye__' ? p2 : p1;
+      if (!realPlayer || realPlayer === '__bye__') { toast('请至少选择一个选手', 'error'); return; }
+      match.player1Id = realPlayer;
+      match.player2Id = null;
+      match.winnerId = realPlayer;
+      match.score = 'W';
+    } else {
+      if (!p1 || !p2 || !score || !winner) { toast('请填写完整信息', 'error'); return; }
+      if (p1 === p2) { toast('不能选择同一选手', 'error'); return; }
+      match.player1Id = p1;
+      match.player2Id = p2;
+      match.score = score;
+      match.winnerId = winner === 'p1' ? p1 : p2;
+    }
+
+    // Progress bracket
+    if (roundIdx < s.playoffs.bracket.rounds.length - 1) {
+      const nextRound = s.playoffs.bracket.rounds[roundIdx + 1];
+      const nextMatchIdx = Math.floor(matchIdx / 2);
+      if (nextRound.matches[nextMatchIdx]) {
+        const slotInNext = matchIdx % 2 === 0 ? 'player1Id' : 'player2Id';
+        nextRound.matches[nextMatchIdx][slotInNext] = match.winnerId;
+      }
+    }
+
+    const newMatch = {
+      id: gid(),
+      player1Id: match.player1Id,
+      player2Id: match.player2Id,
+      winnerId: match.winnerId,
+      score: match.score,
+      date: new Date().toISOString(),
+      type: 'playoffs',
+      tournamentId: s.id,
+    };
+    STATE.matches.push(newMatch);
+    updatePlayerStats(newMatch);
+    saveData();
+    toast('✅ 赛果已录入！', 'success');
+    renderPage();
+  });
+
+  // Setup bye handler
+  setTimeout(() => {
+    const sel1 = document.getElementById('bmPlayer1');
+    const sel2 = document.getElementById('bmPlayer2');
+    if (!sel1 || !sel2) return;
+    const handler = () => {
+      const v1 = sel1.value, v2 = sel2.value;
+      const isBye = v1 === '__bye__' || v2 === '__bye__';
+      ['bmScoreGroup','bmWinnerGroup'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isBye ? 'none' : '';
+      });
+    };
+    sel1.onchange = handler; sel2.onchange = handler;
+  }, 100);
+}
+
+function completePlayoffs() {
+  const s = getSeason();
+  if (!s || !s.playoffs || s.playoffs.status !== 'active') return;
+  const p = s.playoffs;
+  const finalRound = p.bracket.rounds[0];
+  if (!finalRound || !finalRound.matches[0] || !finalRound.matches[0].winnerId) {
+    toast('请先完成所有比赛', 'error'); return;
+  }
+
+  if (!confirm('确定结束本赛季季后赛吗？冠军积分将立即发放。')) return;
+
+  const championId = finalRound.matches[0].winnerId;
+  const champion = getPlayer(championId);
+  if (champion) champion.points += 200;
+
+  // Runner-up +120
+  const runnerUpId = championId === finalRound.matches[0].player1Id
+    ? finalRound.matches[0].player2Id : finalRound.matches[0].player1Id;
+  const runnerUp = getPlayer(runnerUpId);
+  if (runnerUp) runnerUp.points += 120;
+
+  // Semi-finalists +60
+  const bracket = p.bracket;
+  if (bracket.rounds[1]) {
+    bracket.rounds[1].matches.forEach(m => {
+      [m.player1Id, m.player2Id].forEach(pid => {
+        if (pid && pid !== championId && pid !== runnerUpId) {
+          const pp = getPlayer(pid);
+          if (pp) pp.points += 60;
+        }
+      });
+    });
+  }
+
+  p.status = 'completed';
+  p.championId = championId;
+  s.status = 'completed';
+  saveData();
+  toast(`🏆 ${playerName(championId)} 加冕赛季总冠军！`, 'success');
+  renderPage();
+}
+
+function renderPlayoffs(header, content) {
+  const s = getSeason();
+  const playoffs = s ? s.playoffs : null;
+  const ranked = getRankedPlayers();
+  const qualCount = Math.min(PLAYOFF_QUALIFY_COUNT, ranked.length);
+
+  header.innerHTML = `
+    <div>
+      <div class="page-title">👑 季后赛</div>
+      <div class="page-subtitle">${s ? s.name : ''} · 赛季末淘汰赛 · 常规赛前${PLAYOFF_QUALIFY_COUNT}名晋级</div>
+    </div>
+  `;
+
+  if (!playoffs || playoffs.status === 'pending') {
+    // Show qualifier preview
+    content.innerHTML = `
+      <div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:48px;margin-bottom:15px">👑</div>
+        <h3>季后赛尚未开启</h3>
+        <p style="color:var(--text-secondary);margin:10px 0">常规赛积分排名前 <strong style="color:var(--accent)">${PLAYOFF_QUALIFY_COUNT}</strong> 名选手将晋级季后赛</p>
+        <p style="color:var(--text-secondary);margin:10px 0">单败淘汰制 · 种子排位 · 一战定乾坤</p>
+        <button class="btn btn-primary" onclick="startPlayoffs()" style="margin-top:20px">👑 开启季后赛</button>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-header"><div class="card-title">📊 当前常规赛排名</div></div>
+        <table>
+          <thead><tr><th>种子</th><th>选手</th><th>角色</th><th>积分</th><th>状态</th></tr></thead>
+          <tbody>
+            ${ranked.slice(0, qualCount).map((p,i) => `
+              <tr style="${i < PLAYOFF_QUALIFY_COUNT ? '' : 'opacity:0.5'}">
+                <td><span class="rank-badge rank-${i<3 ? i+1 : 'other'}">#${i+1}</span></td>
+                <td><span style="font-weight:600">${p.name}</span></td>
+                <td>${p.character}</td>
+                <td><strong style="color:var(--accent)">${p.points}</strong></td>
+                <td>${i < PLAYOFF_QUALIFY_COUNT ? '<span style="color:var(--accent3)">✅ 晋级区</span>' : '<span style="color:var(--text-secondary)">—</span>'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card rules-section" style="margin-top:20px">
+        <h3>🏆 季后赛积分奖励</h3>
+        <table>
+          <thead><tr><th>名次</th><th>积分</th></tr></thead>
+          <tbody>
+            <tr><td>🥇 冠军</td><td><strong style="color:var(--accent)">+200</strong></td></tr>
+            <tr><td>🥈 亚军</td><td><strong>+120</strong></td></tr>
+            <tr><td>🥉 四强</td><td><strong>+60</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+    return;
+  }
+
+  if (playoffs.status === 'active') {
+    const bracket = playoffs.bracket;
+    content.innerHTML = `
+      <div class="bracket">
+        ${bracket.rounds.map((round, ri) => `
+          <div class="bracket-round">
+            <div class="bracket-round-title">${round.label}</div>
+            ${round.matches.map((m, mi) => `
+              <div class="bracket-match">
+                <div class="bracket-slot ${m.winnerId && m.winnerId===m.player1Id ? 'winner' : ''} ${!m.player1Id ? 'bye' : ''}"
+                     onclick="showPlayoffBracketModal('${s.id}',${ri},${mi},1)"
+                     style="cursor:pointer">
+                  <span>${m.player1Id ? playerName(m.player1Id) : '轮空 (点击选择)'}</span>
+                  ${m.score ? `<span class="score">${m.score === 'W' ? 'W' : m.score.split('-')[m.winnerId === m.player1Id ? 0 : 1]||''}</span>` : ''}
+                </div>
+                <div class="bracket-slot ${m.winnerId && m.winnerId===m.player2Id ? 'winner' : ''} ${!m.player2Id ? 'bye' : ''}"
+                     onclick="showPlayoffBracketModal('${s.id}',${ri},${mi},2)"
+                     style="cursor:pointer">
+                  <span>${m.player2Id ? playerName(m.player2Id) : '轮空 (点击选择)'}</span>
+                  ${m.score ? `<span class="score">${m.score === 'W' ? 'W' : m.score.split('-')[m.winnerId === m.player2Id ? 1 : 0]||''}</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:20px">
+        <button class="btn btn-primary" onclick="completePlayoffs()">🏁 结束季后赛 · 发放积分</button>
+      </div>
+    `;
+    return;
+  }
+
+  if (playoffs.status === 'completed') {
+    const champion = getPlayer(playoffs.championId);
+    content.innerHTML = `
+      <div class="card" style="text-align:center;padding:40px;border:3px solid var(--accent)">
+        <div style="font-size:64px;margin-bottom:10px">🏆</div>
+        <h2 style="font-size:28px;color:var(--accent)">${champion ? champion.name : '—'} 是 ${s.name} 总冠军！</h2>
+        <p style="font-size:16px;color:var(--text-secondary);margin:10px 0">
+          ${champion ? champion.character : ''} · 季后赛冠军 +200 积分
+        </p>
+        <button class="btn btn-outline btn-sm" onclick="navigate('history')" style="margin-top:10px">查看季后赛战绩</button>
+      </div>
+    `;
+    return;
+  }
+}
+
 function showAddParticipantsModal(tournamentId) {
   const t = STATE.tournaments.find(t => t.id === tournamentId);
   if (!t) return;
@@ -1509,9 +1882,10 @@ function renderRules(header, content) {
       <h3>📅 赛季结构</h3>
       <ul>
         <li><strong>赛季周期</strong>：每季度一个赛季（3个月）</li>
-        <li><strong>月赛频率</strong>：每月1次（通常为月末周五下午）</li>
-        <li><strong>擂台挑战</strong>：赛季全程开放，随时可发起</li>
-        <li><strong>赛季结算</strong>：赛季末根据总积分排名，决出赛季冠军</li>
+        <li><strong>常规赛</strong>：日常擂台积分 + 每月月赛积分，累计排名</li>
+        <li><strong>季后赛</strong>：赛季末常规赛前<strong style="color:var(--accent)">${PLAYOFF_QUALIFY_COUNT}</strong>名进入单败淘汰赛</li>
+        <li><strong>种子排位</strong>：常规赛第1对阵第8，第2对阵第7，以此类推</li>
+        <li><strong>赛季总冠军</strong>：季后赛冠军即为赛季总冠军</li>
       </ul>
     </div>
 
@@ -1519,10 +1893,9 @@ function renderRules(header, content) {
       <div class="card rules-section">
         <h3>🏆 月赛规则</h3>
         <ul>
-          <li>赛制：双败淘汰制（或根据人数调整）</li>
-          <li>对阵：根据擂台积分排名种子顺位</li>
+          <li>赛制：单败淘汰制（根据人数自动排对阵）</li>
           <li>比赛：BO3（三局两胜），决赛BO5</li>
-          <li>胜负由双方确认或观战裁判判定</li>
+          <li>冠军 <strong style="color:var(--accent)">+100分</strong>，亚军 <strong>+70分</strong>，四强 <strong>+30分</strong>，参与 <strong>+10分</strong></li>
         </ul>
       </div>
 
@@ -1532,46 +1905,38 @@ function renderRules(header, content) {
           <li>可随时向排名高于自己的选手发起挑战</li>
           <li>被挑战者需在3天内响应</li>
           <li>挑战赛制：BO3（三局两胜）</li>
-          <li>双方自行约定时间，完成后录入结果</li>
+          <li>胜者 <strong style="color:var(--accent)">+10分</strong>，负者不扣分</li>
         </ul>
       </div>
     </div>
 
     <div class="card rules-section">
-      <h3>💰 积分体系</h3>
-      <table class="points-table">
+      <h3>👑 季后赛规则</h3>
+      <ul>
+        <li>常规赛积分排名前<strong style="color:var(--accent)">${PLAYOFF_QUALIFY_COUNT}</strong>名晋级</li>
+        <li>单败淘汰制，种子排位对阵</li>
+        <li>每场BO5（五局三胜），一战定生死</li>
+        <li>🥇 冠军 <strong style="color:var(--accent)">+200分</strong></li>
+        <li>🥈 亚军 <strong>+120分</strong></li>
+        <li>🥉 四强 <strong>+60分</strong></li>
+      </ul>
+    </div>
+
+    <div class="card rules-section">
+      <h3>📊 积分规则</h3>
+      <table>
         <thead><tr><th>项目</th><th>积分</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td>🏆 月赛冠军</td><td style="color:var(--accent);font-weight:700">+100</td><td>每月1人</td></tr>
-          <tr><td>🥈 月赛亚军</td><td style="color:var(--accent2);font-weight:700">+70</td><td>每月1人</td></tr>
-          <tr><td>🥉 月赛季军/四强</td><td style="color:var(--accent3);font-weight:700">+30</td><td>半决赛落败者</td></tr>
-          <tr><td>📋 月赛参与奖</td><td>+10</td><td>所有报名参赛者</td></tr>
-          <tr><td>⚔️ 擂台获胜</td><td>+10</td><td>每场擂台赛胜者</td></tr>
+          <tr><td>🥇 季后赛冠军</td><td><strong style="color:var(--accent)">+200</strong></td><td>赛季总冠军</td></tr>
+          <tr><td>🥈 季后赛亚军</td><td><strong>+120</strong></td><td></td></tr>
+          <tr><td>🥉 季后赛四强</td><td><strong>+60</strong></td><td></td></tr>
+          <tr><td>🏆 月赛冠军</td><td><strong style="color:var(--accent)">+100</strong></td><td>每月月赛</td></tr>
+          <tr><td>🏆 月赛亚军</td><td><strong>+70</strong></td><td></td></tr>
+          <tr><td>🏆 月赛四强</td><td><strong>+30</strong></td><td></td></tr>
+          <tr><td>🏆 月赛参与</td><td><strong>+10</strong></td><td>到场即得</td></tr>
+          <tr><td>⚔️ 擂台获胜</td><td><strong>+10</strong></td><td>每场擂台赛胜者</td></tr>
         </tbody>
       </table>
-    </div>
-
-    <div class="card rules-section">
-      <h3>🎁 奖励机制</h3>
-      <ul>
-        <li><strong>月度冠军</strong>：「月度街霸之王」称号 + 小奖品</li>
-        <li><strong>赛季冠军</strong>：「赛季街霸之王」永久称号 + 实物大奖</li>
-        <li><strong>赛季MVP</strong>：擂台胜场最多者额外奖励</li>
-        <li><strong>最佳进步</strong>：赛季后期积分增长最快者</li>
-        <li><strong>参与全勤</strong>：所有月赛均参与的选手获得全勤奖</li>
-      </ul>
-    </div>
-
-    <div class="card rules-section">
-      <h3>📜 比赛规范</h3>
-      <ul>
-        <li>使用最新版本《街霸6》（或其他约定的街霸版本）</li>
-        <li>每场比赛前双方确认角色选择（可随时更换角色）</li>
-        <li>禁止使用明显bug或作弊手段</li>
-        <li>网络问题导致掉线：协商重赛或按当时比分判定</li>
-        <li>争议由联赛组委会（全员投票）裁定</li>
-        <li>友谊第一，比赛第二。禁止人身攻击，违规者扣分警告</li>
-      </ul>
     </div>
   `;
 }
