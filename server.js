@@ -171,6 +171,10 @@ app.post('/api/state', async (req, res) => {
   if (!newState || typeof newState !== 'object') {
     return res.status(400).json({ error: 'Invalid state data' });
   }
+  // GUARD: require core fields to be valid arrays/objects before accepting
+  if (!Array.isArray(newState.players)) {
+    return res.status(400).json({ error: 'Refused: missing players array. Save aborted to protect data.' });
+  }
   STATE = newState;
   saveLocal(STATE);
 
@@ -183,7 +187,19 @@ app.post('/api/state', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', players: STATE.players.length, matches: STATE.matches.length, backup: !!GITHUB_TOKEN });
+  try {
+    const players = Array.isArray(STATE.players) ? STATE.players.length : 0;
+    const matches = Array.isArray(STATE.matches) ? STATE.matches.length : 0;
+    res.json({ status: 'ok', players, matches, backup: !!GITHUB_TOKEN });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+});
+
+app.get('/api/backup-url', (req, res) => {
+  // Expose GitHub backup URL so user can download backup manually
+  if (!GITHUB_TOKEN) return res.json({ url: null });
+  res.json({ url: `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${GITHUB_BACKUP_PATH}` });
 });
 
 app.get('/ping', (req, res) => {
