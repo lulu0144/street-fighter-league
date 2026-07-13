@@ -82,7 +82,17 @@
     }
   ],
   "matches": [],
-  "challenges": [],
+  "challenges": [
+    {
+      "id": "id_1783932505794_o505iq",
+      "challengerId": "p1",
+      "defenderId": "p3",
+      "status": "pending",
+      "createdDate": "2026-07-13T08:48:25.794Z",
+      "score": null,
+      "winnerId": null
+    }
+  ],
   "tournaments": [],
   "playoffs": [],
   "seasons": [
@@ -94,5 +104,14 @@
       "status": "active"
     }
   ],
-  "currentSeasonId": "s1"
+  "currentSeasonId": "s1",
+  "bettors": [
+    {
+      "id": "id_1783932489106_dl8pv7",
+      "name": "噜噜",
+      "joinDate": "2026-07-13T08:48:09.106Z",
+      "coins": 10
+    }
+  ],
+  "bets": []
 }
