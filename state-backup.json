@@ -203,24 +203,5 @@
       "coins": 10
     }
   ],
-  "bets": [
-    {
-      "id": "id_1783932952429_ly791k",
-      "gameType": "tournament",
-      "gameRef": {
-        "tournamentId": "id_1783932885752_k33jxq",
-        "roundIdx": 2,
-        "matchIdx": 2
-      },
-      "player1Id": "p1",
-      "player2Id": "p6",
-      "player1Name": "策划大大",
-      "player2Name": "UI小姐姐",
-      "betType": "score",
-      "createdBy": "system",
-      "createdDate": "2026-07-13T08:55:52.429Z",
-      "status": "open",
-      "predictions": {}
-    }
-  ]
+  "bets": []
 }
