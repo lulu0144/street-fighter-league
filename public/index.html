@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>街霸争霸赛 · 团队内部联赛平台</title>
+<style>
+/* ===== Reset & Base ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#0f0f1a;
+  --bg-secondary:#1a1a2e;
+  --bg-card:#1e1e36;
+  --bg-card-hover:#252545;
+  --bg-input:#2a2a40;
+  --text-primary:#e8e8f0;
+  --text-secondary:#a0a0b8;
+  --text-muted:#666680;
+  --accent:#ff6b35;
+  --accent-glow:#ff8c5a;
+  --accent2:#ffd700;
+  --accent3:#00d4aa;
+  --danger:#ff4757;
+  --success:#2ed573;
+  --info:#4da6ff;
+  --border:rgba(255,255,255,0.08);
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --radius:12px;
+  --radius-sm:8px;
+  --font-mono:'Courier New',monospace;
+  --font-main:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+html,body{height:100%}
+body{
+  font-family:var(--font-main);
+  background:var(--bg-primary);
+  color:var(--text-primary);
+  line-height:1.6;
+  overflow:hidden;
+}
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ===== Sidebar ===== */
+.sidebar{
+  width:220px;
+  background:var(--bg-secondary);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  flex-shrink:0;
+}
+.sidebar-header{
+  padding:24px 20px 16px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo{
+  font-size:22px;
+  font-weight:900;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:2px;
+}
+.sidebar-subtitle{font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:1px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 20px;cursor:pointer;
+  color:var(--text-secondary);
+  font-size:14px;font-weight:500;
+  transition:all 0.2s;
+  border-left:3px solid transparent;
+  position:relative;
+}
+.nav-item:hover{color:var(--text-primary);background:rgba(255,255,255,0.03)}
+.nav-item.active{
+  color:var(--accent);
+  background:rgba(255,107,53,0.08);
+  border-left-color:var(--accent);
+}
+.nav-item .nav-icon{font-size:18px;width:24px;text-align:center}
+.nav-item .badge{
+  margin-left:auto;background:var(--accent);color:#fff;
+  font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;
+}
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text-muted);
+}
+
+/* ===== Main Content ===== */
+.main{
+  flex:1;display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.page-header{
+  padding:20px 28px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg-secondary);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.page-title{font-size:20px;font-weight:700}
+.page-subtitle{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.page-content{flex:1;overflow-y:auto;padding:24px 28px}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:16px;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.card-title{font-size:15px;font-weight:700}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;
+  display:flex;align-items:center;gap:14px;
+}
+.stat-icon{
+  width:48px;height:48px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.stat-icon.orange{background:rgba(255,107,53,0.15);color:var(--accent)}
+.stat-icon.gold{background:rgba(255,215,0,0.15);color:var(--accent2)}
+.stat-icon.green{background:rgba(0,212,170,0.15);color:var(--accent3)}
+.stat-icon.blue{background:rgba(77,166,255,0.15);color:var(--info)}
+.stat-value{font-size:26px;font-weight:800}
+.stat-label{font-size:12px;color:var(--text-secondary)}
+
+/* ===== Buttons ===== */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 18px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;cursor:pointer;
+  border:none;transition:all 0.2s;
+  font-family:var(--font-main);
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-glow);transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,107,53,0.3)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:rgba(255,255,255,0.05)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{opacity:0.9}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-lg{padding:12px 28px;font-size:15px}
+
+/* ===== Tables ===== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+th{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;background:rgba(0,0,0,0.2)}
+td{font-size:14px}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+.rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:8px;font-weight:700;font-size:13px;
+}
+.rank-1{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000}
+.rank-2{background:linear-gradient(135deg,#c0c0c0,#808080);color:#fff}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#8b4513);color:#fff}
+.rank-other{background:var(--bg-input);color:var(--text-secondary)}
+
+.win-rate{font-weight:600}
+.win-rate.good{color:var(--accent)}
+.win-rate.mid{color:var(--accent2)}
+.win-rate.bad{color:var(--text-secondary)}
+
+/* ===== Bracket ===== */
+.bracket{display:flex;gap:0;align-items:stretch;overflow-x:auto;padding:10px 0}
+.bracket-round{display:flex;flex-direction:column;justify-content:space-around;min-width:200px}
+.bracket-round-header{
+  text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;
+}
+.bracket-match{
+  position:relative;
+  margin:8px 16px;
+}
+.bracket-slot{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;margin:3px 0;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:13px;cursor:pointer;
+  transition:all 0.2s;
+  min-width:150px;
+}
+.bracket-slot:hover{border-color:var(--accent);background:var(--bg-card-hover)}
+.bracket-slot.winner{border-color:var(--accent3);background:rgba(0,212,170,0.1)}
+.bracket-slot.bye{opacity:0.4;font-style:italic}
+.bracket-slot .score{font-weight:700;color:var(--accent);margin-left:8px}
+.bracket-connector{
+  position:absolute;right:-18px;top:50%;
+  width:18px;height:50%;
+  border-right:2px solid var(--border);
+  border-top:2px solid var(--border);
+  border-bottom:none;
+}
+
+/* ===== Challenge Cards ===== */
+.challenge-card{
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:16px;
+  padding:16px 20px;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:10px;
+}
+.challenge-card .challenger{text-align:right}
+.challenge-card .defender{text-align:left}
+.challenge-card .vs{
+  font-size:20px;font-weight:900;color:var(--accent);
+  background:rgba(255,107,53,0.1);
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.player-name{font-weight:700;font-size:15px}
+.player-rank{font-size:11px;color:var(--text-muted)}
+.challenge-actions{display:flex;gap:8px;margin-top:8px;justify-content:center}
+
+/* ===== Status Badges ===== */
+.status{
+  display:inline-block;padding:3px 10px;border-radius:10px;
+  font-size:11px;font-weight:600;text-transform:uppercase;
+}
+.status.pending{background:rgba(255,215,0,0.15);color:var(--accent2)}
+.status.accepted{background:rgba(0,212,170,0.15);color:var(--accent3)}
+.status.declined{background:rgba(255,71,87,0.15);color:var(--danger)}
+.status.completed{background:rgba(77,166,255,0.15);color:var(--info)}
+.status.upcoming{background:rgba(255,215,0,0.15);color:var(--accent2)}
+.status.active{background:rgba(0,212,170,0.15);color:var(--accent3)}
+
+/* ===== Forms & Modals ===== */
+.modal-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.7);z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn 0.2s;
+}
+.modal{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px;width:90%;max-width:480px;
+  box-shadow:var(--shadow);
+}
+.modal h2{font-size:20px;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.form-group input,.form-group select{
+  width:100%;padding:10px 14px;
+  background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text-primary);
+  font-size:14px;font-family:var(--font-main);
+  transition:border-color 0.2s;
+}
+.form-group input:focus,.form-group select:focus{
+  outline:none;border-color:var(--accent);
+}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+
+/* ===== Toast ===== */
+.toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{
+  padding:12px 20px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+  animation:slideIn 0.3s;
+  box-shadow:var(--shadow);
+}
+.toast.success{background:var(--success);color:#000}
+.toast.error{background:var(--danger);color:#fff}
+.toast.info{background:var(--info);color:#fff}
+
+/* ===== Animations ===== */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ===== Rules Page ===== */
+.rules-section{margin-bottom:24px}
+.rules-section h3{
+  font-size:16px;color:var(--accent);margin-bottom:12px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.rules-section p,.rules-section li{
+  font-size:14px;color:var(--text-secondary);line-height:1.8;
+}
+.rules-section ul{padding-left:20px}
+.points-table{margin:12px 0}
+.points-table td{padding:8px 14px;font-size:13px}
+
+/* ===== Empty State ===== */
+.empty-state{
+  text-align:center;padding:60px 20px;
+  color:var(--text-muted);
+}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+
+/* ===== Two Column Layout ===== */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* ===== Grid helpers ===== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ===== Filter Bar ===== */
+.filter-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar select,.filter-bar input{
+  padding:8px 12px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;
+  font-family:var(--font-main);
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">SF LEAGUE</div>
+      <div class="sidebar-subtitle">街霸争霸赛 · 内部联赛</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-footer" id="sidebarFooter"></div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="page-header" id="pageHeader"></div>
+    <div class="page-content" id="pageContent"></div>
+  </main>
+
+  <!-- Modal Container -->
+  <div id="modalContainer"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE (shared via API)
+// ============================================================
+const API_BASE = '';
+
+function loadData() { return getDefaultData(); } // placeholder, real load is async in init
+
+async function apiLoad() {
+  try {
+    const res = await fetch(API_BASE + '/api/state');
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    STATE = data;
+  } catch(e) {
+    console.error('Failed to load from server, using defaults:', e);
+    STATE = getDefaultData();
+  }
+}
+
+async function saveData() {
+  try {
+    const res = await fetch(API_BASE + '/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(STATE),
+    });
+    if (!res.ok) throw new Error('Save failed');
+  } catch(e) {
+    toast('⚠️ 保存失败，请检查网络连接', 'error');
+    console.error('Save error:', e);
+  }
+}
+
+function getDefaultData() {
+  return {
+    players: [
+      { id:'p1', name:'策划大大', character:'春丽', avatar:'👩‍💻', wins:12, losses:5, points:145, joinDate:'2026-06-01' },
+      { id:'p2', name:'程序一哥', character:'隆', avatar:'🧑‍💻', wins:8, losses:7, points:95, joinDate:'2026-06-01' },
+      { id:'p3', name:'美术大佬', character:'蛛俐', avatar:'🎨', wins:6, losses:8, points:78, joinDate:'2026-06-05' },
+      { id:'p4', name:'运营小哥', character:'肯', avatar:'📊', wins:10, losses:6, points:112, joinDate:'2026-06-02' },
+      { id:'p5', name:'测试侠', character:'古烈', avatar:'🔍', wins:4, losses:10, points:52, joinDate:'2026-06-08' },
+      { id:'p6', name:'UI小姐姐', character:'嘉米', avatar:'🎯', wins:7, losses:9, points:85, joinDate:'2026-06-03' },
+      { id:'p7', name:'后台大佬', character:'桑吉尔夫', avatar:'⚙️', wins:9, losses:5, points:105, joinDate:'2026-06-01' },
+      { id:'p8', name:'数据分析师', character:'本田', avatar:'📈', wins:3, losses:11, points:38, joinDate:'2026-06-10' },
+    ],
+    matches: [],
+    challenges: [],
+    tournaments: [],
+    seasons: [
+      { id:'s1', name:'2026夏季赛', startDate:'2026-06-01', endDate:'2026-08-31', status:'active' }
+    ],
+    currentSeasonId: 's1',
+  };
+}
+
+let STATE = {}; // Will be loaded via apiLoad() in init
+
+// ============================================================
+// HELPERS
+// ============================================================
+function gid() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'}); }
+function fmtDateTime(d) { return new Date(d).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function getPlayer(id) { return STATE.players.find(p => p.id === id); }
+function playerName(id) { const p = getPlayer(id); return p ? p.name : '未知'; }
+
+function getRankedPlayers() {
+  return [...STATE.players].sort((a,b) => b.points - a.points);
+}
+
+function getWinRate(p) {
+  const total = p.wins + p.losses;
+  if (total === 0) return 0;
+  return Math.round((p.wins / total) * 100);
+}
+
+function winRateClass(p) {
+  const wr = getWinRate(p);
+  if (wr >= 60) return 'good';
+  if (wr >= 40) return 'mid';
+  return 'bad';
+}
+
+function getSeasonName() {
+  const s = STATE.seasons.find(s => s.id === STATE.currentSeasonId);
+  return s ? s.name : '当前赛季';
+}
+
+function getPendingChallengesCount() {
+  return STATE.challenges.filter(c => c.status === 'pending').length;
+}
+
+function getUpcomingTournaments() {
+  return STATE.tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 2500);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function showModal(title, contentHtml, onSave) {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>${title}</h2>
+        <div class="modal-body">${contentHtml}</div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="closeModal()">取消</button>
+          <button class="btn btn-primary" id="modalSaveBtn">确认</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalSaveBtn').addEventListener('click', () => {
+    if (onSave) onSave();
+    closeModal();
+  });
+}
+
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentPage = 'dashboard';
+
+const NAV_ITEMS = [
+  { id:'dashboard', icon:'🏠', label:'首页' },
+  { id:'ladder', icon:'⚔️', label:'擂台挑战' },
+  { id:'tournament', icon:'🏆', label:'月赛' },
+  { id:'players', icon:'👥', label:'选手' },
+  { id:'history', icon:'📋', label:'战绩' },
+  { id:'rules', icon:'📖', label:'赛制规则' },
+];
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = NAV_ITEMS.map(item => `
+    <div class="nav-item ${currentPage === item.id ? 'active' : ''}" onclick="navigate('${item.id}')">
+      <span class="nav-icon">${item.icon}</span>
+      ${item.label}
+      ${item.id === 'ladder' && getPendingChallengesCount() > 0 ? `<span class="badge">${getPendingChallengesCount()}</span>` : ''}
+    </div>
+  `).join('');
+
+  const footer = document.getElementById('sidebarFooter');
+  footer.textContent = `${getSeasonName()} · ${STATE.players.length}名选手`;
+}
+
+function navigate(pageId) {
+  currentPage = pageId;
+  renderSidebar();
+  renderPage();
+}
+
+function renderPage() {
+  const header = document.getElementById('pageHeader');
+  const content = document.getElementById('pageContent');
+
+  switch(currentPage) {
+    case 'dashboard': renderDashboard(header, content); break;
+    case 'ladder': renderLadder(header, content); break;
+    case 'tournament': renderTournament(header, content); break;
+    case 'players': renderPlayers(header, content); break;
+    case 'history': renderHistory(header, content); break;
+    case 'rules': renderRules(header, content); break;
+  }
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">🏠 街霸争霸赛</div>
+      <div class="page-subtitle">${getSeasonName()} · 低频率、高参与、有仪式感的团队联赛</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="navigate('ladder')">⚔️ 发起挑战</button>
+      <button class="btn btn-outline btn-sm" onclick="navigate('tournament')">🏆 查看月赛</button>
+    </div>
+  `;
+
+  const ranked = getRankedPlayers();
+  const top3 = ranked.slice(0, 3);
+  const recentMatches = STATE.matches.slice(-5).reverse();
+  const upcomingTourney = STATE.tournaments.filter(t => t.status === 'upcoming')[0];
+  const pendingChallenges = getPendingChallengesCount();
+
+  content.innerHTML = `
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-icon orange">👥</div>
+        <div><div class="stat-value">${STATE.players.length}</div><div class="stat-label">参赛选手</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">🏆</div>
+        <div><div class="stat-value">${STATE.matches.length}</div><div class="stat-label">总对局数</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">⚔️</div>
+        <div><div class="stat-value">${pendingChallenges}</div><div class="stat-label">待响应挑战</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📅</div>
+        <div><div class="stat-value">${STATE.tournaments.length}</div><div class="stat-label">月赛场次</div></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏆 积分排行榜 TOP 5</div></div>
+        <table>
+          <thead><tr><th>#</th><th>选手</th><th>角色</th><th>胜场</th><th>积分</th></tr></thead>
+          <tbody>
+            ${ranked.slice(0,5).map((p,i) => `
+              <tr>
+                <td><span class="rank-badge rank-${i<3 ? i+1 : 'other'}">${i+1}</span></td>
+                <td><span style="font-weight:600">${p.avatar} ${p.name}</span></td>
+                <td>${p.character}</td>
+                <td>${p.wins}W / ${p.losses}L</td>
+                <td><strong style="color:var(--accent)">${p.points}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 最近对局</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('history')">查看全部</button>
+        </div>
+        ${recentMatches.length === 0 ? '<div class="empty-state"><p>暂无对局记录</p></div>' : `
+        <table>
+          <thead><tr><th>日期</th><th>对战</th><th>比分</th><th>胜者</th></tr></thead>
+          <tbody>
+            ${recentMatches.map(m => `
+              <tr>
+                <td>${fmtDate(m.date)}</td>
+                <td>${playerName(m.player1Id)} vs ${playerName(m.player2Id)}</td>
+                <td>${m.score}</td>
+                <td><strong style="color:var(--accent3)">🏆 ${playerName(m.winnerId)}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+
+    ${upcomingTourney ? `
+    <div class="card" style="border-left:3px solid var(--accent)">
+      <div class="card-header">
+        <div class="card-title">📅 下次月赛</div>
+        <span class="status upcoming">即将开始</span>
+      </div>
+      <div style="display:flex;gap:30px;align-items:center">
+        <div style="font-size:28px;font-weight:900;color:var(--accent2)">${fmtDate(upcomingTourney.date)}</div>
+        <div>
+          <div style="font-size:16px;font-weight:700">${upcomingTourney.name}</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">已报名: ${(upcomingTourney.participants||[]).length}人</div>
+        </div>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="navigate('tournament')">查看详情</button>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ============================================================
+// LADDER (擂台挑战)
+// ============================================================
+function renderLadder(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">⚔️ 擂台挑战</div>
+      <div class="page-subtitle">随时挑战排名高于你的选手，提升积分排名。完全自由，想打就打！</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="showChallengeModal()">⚡ 发起新挑战</button>
+  `;
+
+  const ranked = getRankedPlayers();
+  const pendingChallenges = STATE.challenges.filter(c => c.status === 'pending');
+  const recentChallenges = STATE.challenges.filter(c => c.status !== 'pending').slice(0, 10);
+
+  content.innerHTML = `
+    ${pendingChallenges.length > 0 ? `
+    <div class="card" style="border-left:3px solid var(--accent2)">
+      <div class="card-header"><div class="card-title">⏳ 待响应挑战 (${pendingChallenges.length})</div></div>
+      ${pendingChallenges.map(c => {
+        const challenger = getPlayer(c.challengerId);
+        const defender = getPlayer(c.defenderId);
+        if (!challenger || !defender) return '';
+        return `
+        <div class="challenge-card">
+          <div class="challenger">
+            <div class="player-name">${challenger.avatar} ${challenger.name}</div>
+            <div class="player-rank">#${ranked.indexOf(challenger)+1} · ${challenger.character}</div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="defender">
+            <div class="player-name">${defender.avatar} ${defender.name}</div>
+            <div class="player-rank">#${ranked.indexOf(defender)+1} · ${defender.character}</div>
+          </div>
+          <div class="challenge-actions" style="grid-column:1/-1">
+            <button class="btn btn-primary btn-sm" onclick="acceptChallenge('${c.id}')">✅ 接受挑战</button>
+            <button class="btn btn-outline btn-sm" onclick="declineChallenge('${c.id}')">❌ 拒绝</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 当前积分排名</div></div>
+        <table>
+          <thead><tr><th>#</th><th>选手</th><th>角色</th><th>胜率</th><th>积分</th><th></th></tr></thead>
+          <tbody>
+            ${ranked.map((p,i) => `
+              <tr>
+                <td><span class="rank-badge rank-${i<3 ? i+1 : 'other'}">${i+1}</span></td>
+                <td><span style="font-weight:600">${p.avatar} ${p.name}</span></td>
+                <td>${p.character}</td>
+                <td><span class="win-rate ${winRateClass(p)}">${getWinRate(p)}%</span></td>
+                <td><strong>${p.points}</strong></td>
+                <td><button class="btn btn-outline btn-sm" onclick="challengePlayer('${p.id}')">挑战</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📜 最近挑战记录</div></div>
+        ${recentChallenges.length === 0 ? '<div class="empty-state"><p>暂无挑战记录</p></div>' : `
+        <div style="max-height:400px;overflow-y:auto">
+        ${recentChallenges.map(c => {
+          const challenger = getPlayer(c.challengerId);
+          const defender = getPlayer(c.defenderId);
+          if (!challenger || !defender) return '';
+          const won = c.status === 'completed' && c.winnerId === c.challengerId;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span>${fmtDate(c.createdDate)}</span>
+            <span style="font-weight:600">${challenger.name}</span>
+            <span style="color:var(--text-muted)">vs</span>
+            <span style="font-weight:600">${defender.name}</span>
+            <span class="status ${c.status}">${c.status==='completed'?(c.winnerId===c.challengerId?'挑战成功':'挑战失败'):c.status}</span>
+            ${c.score ? `<span style="color:var(--accent)">${c.score}</span>` : ''}
+          </div>`;
+        }).join('')}
+        </div>`}
+      </div>
+    </div>
+  `;
+}
+
+function showChallengeModal() {
+  const ranked = getRankedPlayers();
+  const options = ranked.map((p,i) => `<option value="${p.id}">#${i+1} ${p.name} (${p.character}) - ${p.points}分</option>`).join('');
+  const html = `
+    <div class="form-group">
+      <label>挑战者</label>
+      <select id="challengeChallenger">
+        ${options}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>被挑战者</label>
+      <select id="challengeDefender">
+        ${options}
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted)">提示：一般应挑战排名高于你的选手。战书发出后等待对方响应。</p>
+  `;
+  showModal('发起挑战', html, () => {
+    const challengerId = document.getElementById('challengeChallenger').value;
+    const defenderId = document.getElementById('challengeDefender').value;
+    if (challengerId === defenderId) { toast('不能挑战自己！', 'error'); return; }
+    STATE.challenges.push({
+      id: gid(),
+      challengerId,
+      defenderId,
+      status: 'pending',
+      createdDate: new Date().toISOString(),
+      score: null,
+      winnerId: null,
+    });
+    saveData();
+    toast('⚔️ 挑战已发出！', 'success');
+    renderPage();
+  });
+}
+
+function challengePlayer(playerId) {
+  const ranked = getRankedPlayers();
+  const target = getPlayer(playerId);
+  const options = ranked.map((p,i) => `<option value="${p.id}" ${p.id===playerId?'selected':''}>#${i+1} ${p.name} (${p.character}) - ${p.points}分</option>`).join('');
+  const html = `
+    <input type="hidden" id="targetId" value="${playerId}">
+    <div class="form-group">
+      <label>挑战者</label>
+      <select id="challengeChallenger">
+        ${options}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>被挑战者</label>
+      <select id="challengeDefender">
+        ${options}
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted)">发起挑战后，等待 ${target.name} 接受并完成对战。</p>
+  `;
+  showModal(`挑战 ${target.name}`, html, () => {
+    const challengerId = document.getElementById('challengeChallenger').value;
+    const defenderId = document.getElementById('challengeDefender').value;
+    if (challengerId === defenderId) { toast('不能挑战自己！', 'error'); return; }
+    STATE.challenges.push({
+      id: gid(),
+      challengerId,
+      defenderId,
+      status: 'pending',
+      createdDate: new Date().toISOString(),
+      score: null,
+      winnerId: null,
+    });
+    saveData();
+    toast('⚔️ 挑战已发出！', 'success');
+    renderPage();
+  });
+}
+
+function acceptChallenge(challengeId) {
+  const c = STATE.challenges.find(ch => ch.id === challengeId);
+  if (!c) return;
+
+  const challenger = getPlayer(c.challengerId);
+  const defender = getPlayer(c.defenderId);
+  const html = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:700">${challenger.avatar} ${challenger.name} <span style="color:var(--accent);margin:0 10px">VS</span> ${defender.avatar} ${defender.name}</div>
+    </div>
+    <div class="form-group">
+      <label>比分 (例如: 2-1)</label>
+      <input id="matchScore" placeholder="2-0 / 2-1 / 3-2 ..." value="2-0">
+    </div>
+    <div class="form-group">
+      <label>胜者</label>
+      <select id="matchWinner">
+        <option value="${c.challengerId}">${challenger.name} (挑战者)</option>
+        <option value="${c.defenderId}">${defender.name} (被挑战者)</option>
+      </select>
+    </div>
+  `;
+  showModal('接受挑战 · 录入结果', html, () => {
+    const score = document.getElementById('matchScore').value;
+    const winnerId = document.getElementById('matchWinner').value;
+
+    c.status = 'completed';
+    c.score = score;
+    c.winnerId = winnerId;
+
+    const match = {
+      id: gid(),
+      player1Id: c.challengerId,
+      player2Id: c.defenderId,
+      winnerId,
+      score,
+      date: new Date().toISOString(),
+      type: 'ladder',
+      tournamentId: null,
+    };
+    STATE.matches.push(match);
+    updatePlayerStats(match);
+    saveData();
+    toast('✅ 挑战结果已记录！', 'success');
+    renderPage();
+  });
+}
+
+function declineChallenge(challengeId) {
+  const c = STATE.challenges.find(ch => ch.id === challengeId);
+  if (c) { c.status = 'declined'; saveData(); toast('挑战已拒绝', 'info'); renderPage(); }
+}
+
+// ============================================================
+// TOURNAMENT (月赛)
+// ============================================================
+function renderTournament(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">🏆 月赛管理</div>
+      <div class="page-subtitle">每月一次正式比赛日，双败淘汰制，全员参与</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="showCreateTournamentModal()">📅 创建月赛</button>
+  `;
+
+  const tournaments = [...STATE.tournaments].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  content.innerHTML = `
+    ${tournaments.length === 0 ? `
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <p>还没有创建月赛</p>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="showCreateTournamentModal()">创建第一场月赛</button>
+      </div>
+    </div>` : ''}
+
+    ${tournaments.map(t => {
+      const bracketHtml = t.status === 'active' || t.status === 'completed' ? renderBracket(t) : renderUpcomingTournament(t);
+      return `
+      <div class="card" style="border-left:3px solid ${t.status==='active'?'var(--accent3)':t.status==='upcoming'?'var(--accent2)':'var(--text-muted)'}">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏆 ${t.name}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">${fmtDate(t.date)}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="status ${t.status}">${t.status==='upcoming'?'即将开始':t.status==='active'?'进行中':'已结束'}</span>
+            ${t.status === 'upcoming' ? `
+              <button class="btn btn-primary btn-sm" onclick="startTournament('${t.id}')">▶ 开始比赛</button>
+            ` : ''}
+            ${t.status === 'active' ? `
+              <button class="btn btn-outline btn-sm" onclick="showRecordMatchModal('${t.id}')">📝 录入赛果</button>
+              <button class="btn btn-primary btn-sm" onclick="completeTournament('${t.id}')">🏁 结束月赛</button>
+            ` : ''}
+            <button class="btn btn-outline btn-sm" onclick="deleteTournament('${t.id}')">🗑</button>
+          </div>
+        </div>
+        ${bracketHtml}
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function renderUpcomingTournament(t) {
+  const participants = (t.participants || []).map(id => getPlayer(id)).filter(Boolean);
+  return `
+    <div style="padding:12px 0">
+      <p style="margin-bottom:8px;color:var(--text-secondary)">已报名选手 (${participants.length}人)：</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${participants.length === 0 ? '<span style="color:var(--text-muted);font-size:13px">待报名...</span>' : ''}
+        ${participants.map(p => `
+          <span style="background:var(--bg-input);padding:6px 12px;border-radius:20px;font-size:13px">${p.avatar} ${p.name}</span>
+        `).join('')}
+      </div>
+      ${participants.length < STATE.players.length ? `
+        <div style="margin-top:12px">
+          <button class="btn btn-outline btn-sm" onclick="showAddParticipantsModal('${t.id}')">+ 添加选手</button>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+function renderBracket(t) {
+  if (!t.bracket || !t.bracket.rounds || t.bracket.rounds.length === 0) {
+    return '<div class="empty-state"><p>尚未生成对阵表</p></div>';
+  }
+
+  const rounds = t.bracket.rounds;
+  return `
+    <div style="overflow-x:auto;padding:8px 0">
+      <div class="bracket">
+        ${rounds.map((round, ri) => `
+          <div class="bracket-round" style="min-width:${ri===0?220:200}px">
+            <div class="bracket-round-header">${round.label}</div>
+            ${round.matches.map((m, mi) => `
+              <div class="bracket-match">
+                <div class="bracket-slot ${m.winnerId && m.winnerId===m.player1Id ? 'winner' : ''} ${!m.player1Id ? 'bye' : ''}"
+                     onclick="showBracketMatchModal('${t.id}',${ri},${mi},1)"
+                     style="cursor:pointer">
+                  <span>${m.player1Id ? playerName(m.player1Id) : '轮空'}</span>
+                  ${m.score && m.score !== 'W-L' ? `<span class="score">${m.score.split('-')[m.winnerId===m.player1Id?0:1]||''}</span>` : ''}
+                  ${m.score === 'W-L' && m.winnerId===m.player1Id ? '<span class="score">W</span>' : ''}
+                </div>
+                <div class="bracket-slot ${m.winnerId && m.winnerId===m.player2Id ? 'winner' : ''} ${!m.player2Id ? 'bye' : ''}"
+                     onclick="showBracketMatchModal('${t.id}',${ri},${mi},2)"
+                     style="cursor:pointer">
+                  <span>${m.player2Id ? playerName(m.player2Id) : '轮空'}</span>
+                  ${m.score && m.score !== 'W-L' ? `<span class="score">${m.score.split('-')[m.winnerId===m.player2Id?0:1]||''}</span>` : ''}
+                  ${m.score === 'W-L' && m.winnerId===m.player2Id ? '<span class="score">W</span>' : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function showBracketMatchModal(tournamentId, roundIdx, matchIdx, slot) {
+  const t = STATE.tournaments.find(t => t.id === tournamentId);
+  if (!t) return;
+  const match = t.bracket.rounds[roundIdx].matches[matchIdx];
+  const playerId = slot === 1 ? match.player1Id : match.player2Id;
+  const opponentId = slot === 1 ? match.player2Id : match.player1Id;
+
+  const allPlayers = STATE.players;
+  const makeOpts = (selectedId) =>
+    `<option value="">-- 选择选手 --</option>` +
+    `<option value="__bye__" ${!selectedId?'selected':''}>🚫 轮空</option>` +
+    allPlayers.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${p.name} (${p.character})</option>`).join('');
+
+  const p1Label = `选手A${!match.player1Id ? ' (轮空)' : ''}`;
+  const p2Label = `选手B${!match.player2Id ? ' (轮空)' : ''}`;
+
+  const html = `
+    <div class="form-group">
+      <label>${p1Label}</label>
+      <select id="bmPlayer1" onchange="onBracketPlayerChange()">${makeOpts(match.player1Id)}</select>
+    </div>
+    <div class="form-group">
+      <label>${p2Label}</label>
+      <select id="bmPlayer2" onchange="onBracketPlayerChange()">${makeOpts(match.player2Id)}</select>
+    </div>
+    <div class="form-group" id="bmScoreGroup">
+      <label>比分</label>
+      <input id="bmScore" placeholder="2-0 / 2-1" value="${match.score||''}">
+    </div>
+    <div class="form-group" id="bmWinnerGroup">
+      <label>胜者</label>
+      <select id="bmWinner">
+        <option value="">-- 选择胜者 --</option>
+        <option value="p1">选手A</option>
+        <option value="p2">选手B</option>
+      </select>
+    </div>
+  `;
+
+  showModal('录入比赛结果', html, () => {
+    let p1 = document.getElementById('bmPlayer1').value;
+    let p2 = document.getElementById('bmPlayer2').value;
+    const score = document.getElementById('bmScore').value;
+    const winner = document.getElementById('bmWinner').value;
+
+    // Handle "轮空" (bye)
+    const p1IsBye = p1 === '__bye__';
+    const p2IsBye = p2 === '__bye__';
+
+    if (p1IsBye && p2IsBye) { toast('双方不能都轮空', 'error'); return; }
+
+    if (p1IsBye || p2IsBye) {
+      // Bye match: the non-bye player auto-wins
+      if (p1IsBye) { p1 = null; match.winnerId = p2; }
+      if (p2IsBye) { p2 = null; match.winnerId = p1; }
+      match.player1Id = p1;
+      match.player2Id = p2;
+      match.score = 'W-L';
+    } else {
+      if (!p1 || !p2 || !score || !winner) { toast('请填写完整信息', 'error'); return; }
+      if (p1 === p2) { toast('不能选择同一选手', 'error'); return; }
+      match.player1Id = p1;
+      match.player2Id = p2;
+      match.score = score;
+      match.winnerId = winner === 'p1' ? p1 : p2;
+    }
+
+    // Progress bracket: advance winner to next round
+    if (roundIdx < t.bracket.rounds.length - 1) {
+      const nextRound = t.bracket.rounds[roundIdx + 1];
+      const nextMatchIdx = Math.floor(matchIdx / 2);
+      if (nextRound.matches[nextMatchIdx]) {
+        const slotInNext = matchIdx % 2 === 0 ? 'player1Id' : 'player2Id';
+        nextRound.matches[nextMatchIdx][slotInNext] = match.winnerId;
+      }
+    }
+
+    const newMatch = {
+      id: gid(),
+      player1Id: p1,
+      player2Id: p2,
+      winnerId: match.winnerId,
+      score,
+      date: new Date().toISOString(),
+      type: 'tournament',
+      tournamentId: t.id,
+    };
+    STATE.matches.push(newMatch);
+    updatePlayerStats(newMatch);
+    saveData();
+    toast('✅ 赛果已录入！', 'success');
+    renderPage();
+  });
+}
+
+function onBracketPlayerChange() {
+  const p1 = document.getElementById('bmPlayer1')?.value;
+  const p2 = document.getElementById('bmPlayer2')?.value;
+  const scoreGroup = document.getElementById('bmScoreGroup');
+  const winnerGroup = document.getElementById('bmWinnerGroup');
+  if (!scoreGroup || !winnerGroup) return;
+  const isBye = p1 === '__bye__' || p2 === '__bye__';
+  scoreGroup.style.display = isBye ? 'none' : 'block';
+  winnerGroup.style.display = isBye ? 'none' : 'block';
+}
+
+function showCreateTournamentModal() {
+  const html = `
+    <div class="form-group">
+      <label>月赛名称</label>
+      <input id="tName" placeholder="例如: 7月月赛" value="${new Date().getMonth()+1}月月赛">
+    </div>
+    <div class="form-group">
+      <label>比赛日期</label>
+      <input id="tDate" type="date" value="${new Date().toISOString().split('T')[0]}">
+    </div>
+  `;
+  showModal('创建月赛', html, () => {
+    const name = document.getElementById('tName').value;
+    const date = document.getElementById('tDate').value;
+    if (!name || !date) { toast('请填写完整信息', 'error'); return; }
+
+    const allPlayerIds = STATE.players.map(p => p.id);
+    STATE.tournaments.push({
+      id: gid(),
+      name,
+      date: new Date(date).toISOString(),
+      status: 'upcoming',
+      participants: allPlayerIds,
+      bracket: null,
+    });
+    saveData();
+    toast('📅 月赛已创建！', 'success');
+    renderPage();
+  });
+}
+
+function startTournament(tournamentId) {
+  const t = STATE.tournaments.find(t => t.id === tournamentId);
+  if (!t) return;
+  t.status = 'active';
+  t.bracket = generateBracket(t.participants || []);
+  saveData();
+  toast('▶ 月赛开始！', 'success');
+  renderPage();
+}
+
+function generateBracket(participantIds) {
+  // Single elimination bracket
+  const shuffled = [...participantIds].sort(() => Math.random() - 0.5);
+  // Pad to power of 2
+  let n = 1;
+  while (n < shuffled.length) n *= 2;
+  const padded = [...shuffled];
+  while (padded.length < n) padded.push(null);
+
+  const rounds = [];
+  const roundNames = {2:'决赛',4:'半决赛',8:'四分之一决赛',16:'八分之一决赛',32:'16强赛'};
+  let currentRound = padded;
+  let roundNum = 1;
+
+  while (currentRound.length >= 2) {
+    const matches = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      matches.push({
+        player1Id: currentRound[i],
+        player2Id: currentRound[i+1],
+        winnerId: null,
+        score: null,
+      });
+    }
+    rounds.push({
+      label: roundNames[currentRound.length] || `第${roundNum}轮`,
+      matches,
+    });
+    currentRound = new Array(currentRound.length / 2).fill(null);
+    roundNum++;
+  }
+
+  return { rounds: rounds.reverse() };
+}
+
+function completeTournament(tournamentId) {
+  const t = STATE.tournaments.find(t => t.id === tournamentId);
+  if (!t) return;
+
+  // Award points based on bracket results
+  const finalRound = t.bracket.rounds[0];
+  if (finalRound && finalRound.matches[0] && finalRound.matches[0].winnerId) {
+    const winner = getPlayer(finalRound.matches[0].winnerId);
+    if (winner) winner.points += 100;
+
+    const runnerUpId = finalRound.matches[0].winnerId === finalRound.matches[0].player1Id
+      ? finalRound.matches[0].player2Id : finalRound.matches[0].player1Id;
+    const runnerUp = getPlayer(runnerUpId);
+    if (runnerUp) runnerUp.points += 70;
+
+    // Semi-finalists
+    if (t.bracket.rounds[1]) {
+      t.bracket.rounds[1].matches.forEach(m => {
+        [m.player1Id, m.player2Id].forEach(pid => {
+          if (pid && pid !== finalRound.matches[0].winnerId && pid !== runnerUpId) {
+            const p = getPlayer(pid);
+            if (p) p.points += 30;
+          }
+        });
+      });
+    }
+
+    // Participation points
+    (t.participants || []).forEach(pid => {
+      const p = getPlayer(pid);
+      if (p) p.points += 10;
+    });
+  }
+
+  t.status = 'completed';
+  saveData();
+  toast('🏁 月赛已结束！积分已发放', 'success');
+  renderPage();
+}
+
+function deleteTournament(tournamentId) {
+  if (!confirm('确定要删除这个月赛吗？')) return;
+  STATE.tournaments = STATE.tournaments.filter(t => t.id !== tournamentId);
+  STATE.matches = STATE.matches.filter(m => m.tournamentId !== tournamentId);
+  saveData();
+  toast('已删除', 'info');
+  renderPage();
+}
+
+function showAddParticipantsModal(tournamentId) {
+  const t = STATE.tournaments.find(t => t.id === tournamentId);
+  if (!t) return;
+  const notIncluded = STATE.players.filter(p => !(t.participants||[]).includes(p.id));
+  const html = `
+    <p style="margin-bottom:12px;color:var(--text-secondary)">选择要添加的选手：</p>
+    ${notIncluded.map(p => `
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer">
+        <input type="checkbox" value="${p.id}" class="addPlayerCheck">
+        <span>${p.avatar} ${p.name} (${p.character})</span>
+      </label>
+    `).join('')}
+    ${notIncluded.length === 0 ? '<p style="color:var(--text-muted)">所有选手已报名</p>' : ''}
+  `;
+  showModal('添加参赛选手', html, () => {
+    const checks = document.querySelectorAll('.addPlayerCheck:checked');
+    checks.forEach(cb => { if (!t.participants) t.participants = []; t.participants.push(cb.value); });
+    saveData();
+    toast(`已添加 ${checks.length} 名选手`, 'success');
+    renderPage();
+  });
+}
+
+// ============================================================
+// PLAYERS
+// ============================================================
+function renderPlayers(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">👥 选手管理</div>
+      <div class="page-subtitle">${STATE.players.length}名选手参与${getSeasonName()}</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="showAddPlayerModal()">+ 添加选手</button>
+  `;
+
+  const ranked = getRankedPlayers();
+
+  content.innerHTML = `
+    <div class="card">
+      <table>
+        <thead><tr><th>#</th><th>选手</th><th>擅长角色</th><th>战绩</th><th>胜率</th><th>积分</th><th></th></tr></thead>
+        <tbody>
+          ${ranked.map((p,i) => `
+            <tr>
+              <td><span class="rank-badge rank-${i<3 ? i+1 : 'other'}">${i+1}</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:20px">${p.avatar}</span>
+                  <span style="font-weight:600">${p.name}</span>
+                </div>
+              </td>
+              <td><span style="background:var(--bg-input);padding:3px 10px;border-radius:12px;font-size:12px">${p.character}</span></td>
+              <td>${p.wins}W / ${p.losses}L</td>
+              <td><span class="win-rate ${winRateClass(p)}">${getWinRate(p)}%</span></td>
+              <td><strong style="color:var(--accent);font-size:16px">${p.points}</strong></td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="showEditPlayerModal('${p.id}')">✏️</button>
+                <button class="btn btn-outline btn-sm" onclick="deletePlayer('${p.id}')" style="color:var(--danger)">🗑</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function showAddPlayerModal() {
+  const html = `
+    <div class="form-group">
+      <label>姓名</label>
+      <input id="pName" placeholder="选手姓名">
+    </div>
+    <div class="form-group">
+      <label>头像 (Emoji)</label>
+      <input id="pAvatar" placeholder="👤" value="👤" maxlength="2">
+    </div>
+    <div class="form-group">
+      <label>擅长角色</label>
+      <select id="pCharacter">
+        <option>隆</option><option>肯</option><option>春丽</option><option>古烈</option>
+        <option>桑吉尔夫</option><option>达尔西姆</option><option>本田</option><option>布兰卡</option>
+        <option>嘉米</option><option>蛛俐</option><option>豪鬼</option><option>卢克</option>
+        <option>杰米</option><option>金佰莉</option><option>曼侬</option><option>玛丽莎</option>
+        <option>JP</option><option>莉莉</option><option>迪杰</option><option>本田</option>
+      </select>
+    </div>
+  `;
+  showModal('添加选手', html, () => {
+    const name = document.getElementById('pName').value.trim();
+    if (!name) { toast('请输入姓名', 'error'); return; }
+    STATE.players.push({
+      id: gid(),
+      name,
+      avatar: document.getElementById('pAvatar').value || '👤',
+      character: document.getElementById('pCharacter').value,
+      wins: 0, losses: 0, points: 0,
+      joinDate: new Date().toISOString(),
+    });
+    saveData();
+    toast('✅ 选手已添加！', 'success');
+    renderPage();
+  });
+}
+
+function showEditPlayerModal(playerId) {
+  const p = getPlayer(playerId);
+  if (!p) return;
+  const characters = ['隆','肯','春丽','古烈','桑吉尔夫','达尔西姆','本田','布兰卡','嘉米','蛛俐','豪鬼','卢克','杰米','金佰莉','曼侬','玛丽莎','JP','莉莉','迪杰'];
+  const html = `
+    <div class="form-group">
+      <label>姓名</label>
+      <input id="pName" value="${p.name}">
+    </div>
+    <div class="form-group">
+      <label>头像</label>
+      <input id="pAvatar" value="${p.avatar}" maxlength="2">
+    </div>
+    <div class="form-group">
+      <label>擅长角色</label>
+      <select id="pCharacter">
+        ${characters.map(c => `<option value="${c}" ${c===p.character?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+  `;
+  showModal('编辑选手', html, () => {
+    p.name = document.getElementById('pName').value.trim();
+    p.avatar = document.getElementById('pAvatar').value || '👤';
+    p.character = document.getElementById('pCharacter').value;
+    if (!p.name) { toast('姓名不能为空', 'error'); return; }
+    saveData();
+    toast('✅ 选手已更新', 'success');
+    renderPage();
+  });
+}
+
+function deletePlayer(playerId) {
+  const p = getPlayer(playerId);
+  if (!confirm(`确定删除选手「${p.name}」吗？相关战绩将保留。`)) return;
+  STATE.players = STATE.players.filter(p => p.id !== playerId);
+  STATE.challenges = STATE.challenges.filter(c => c.challengerId !== playerId && c.defenderId !== playerId);
+  STATE.tournaments.forEach(t => {
+    if (t.participants) t.participants = t.participants.filter(id => id !== playerId);
+    if (t.bracket) {
+      t.bracket.rounds.forEach(r => r.matches.forEach(m => {
+        if (m.player1Id === playerId) m.player1Id = null;
+        if (m.player2Id === playerId) m.player2Id = null;
+        if (m.winnerId === playerId) m.winnerId = null;
+      }));
+    }
+  });
+  saveData();
+  toast('选手已删除', 'info');
+  renderPage();
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">📋 战绩记录</div>
+      <div class="page-subtitle">共 ${STATE.matches.length} 场对局</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="showRecordDirectMatchModal()">📝 直接录入对局</button>
+      <button class="btn btn-outline btn-sm" onclick="exportHistory()">📥 导出CSV</button>
+    </div>
+  `;
+
+  const matches = [...STATE.matches].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const typeLabels = {ladder:'擂台赛', tournament:'月赛'};
+
+  content.innerHTML = `
+    <div class="filter-bar">
+      <select id="historyFilter" onchange="renderPage()">
+        <option value="all">全部类型</option>
+        <option value="ladder">擂台赛</option>
+        <option value="tournament">月赛</option>
+      </select>
+      <select id="historyPlayerFilter" onchange="renderPage()">
+        <option value="all">全部选手</option>
+        ${STATE.players.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+      </select>
+    </div>
+
+    ${matches.length === 0 ? '<div class="card"><div class="empty-state"><div class="empty-icon">📋</div><p>暂无对局记录</p></div></div>' : ''}
+
+    ${matches.filter(m => {
+      const typeFilter = document.getElementById('historyFilter')?.value || 'all';
+      const playerFilter = document.getElementById('historyPlayerFilter')?.value || 'all';
+      if (typeFilter !== 'all' && m.type !== typeFilter) return false;
+      if (playerFilter !== 'all' && m.player1Id !== playerFilter && m.player2Id !== playerFilter) return false;
+      return true;
+    }).map(m => `
+      <div class="card" style="padding:14px 20px">
+        <div style="display:flex;align-items:center;gap:16px;font-size:14px">
+          <span style="color:var(--text-muted);font-size:12px">${fmtDateTime(m.date)}</span>
+          <span class="status ${m.type}" style="font-size:10px">${typeLabels[m.type]||m.type}</span>
+          <span style="font-weight:600">${playerName(m.player1Id)}</span>
+          <span style="color:var(--text-muted)">vs</span>
+          <span style="font-weight:600">${playerName(m.player2Id)}</span>
+          <span style="background:var(--bg-input);padding:4px 10px;border-radius:6px;font-family:var(--font-mono);font-weight:700;color:var(--accent)">${m.score}</span>
+          <span style="color:var(--accent3);font-weight:700;margin-left:auto">🏆 ${playerName(m.winnerId)} 胜</span>
+          <button class="btn btn-outline btn-sm" onclick="deleteMatch('${m.id}')" style="color:var(--danger);font-size:11px">删</button>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function showRecordDirectMatchModal() {
+  const playerOptions = STATE.players.map(p => `<option value="${p.id}">${p.name} (${p.character})</option>`).join('');
+  const html = `
+    <div class="form-group">
+      <label>选手A</label>
+      <select id="dmPlayer1">${playerOptions}</select>
+    </div>
+    <div class="form-group">
+      <label>选手B</label>
+      <select id="dmPlayer2">${playerOptions}</select>
+    </div>
+    <div class="form-group">
+      <label>比分</label>
+      <input id="dmScore" placeholder="2-0 / 2-1 / 3-2 ..." value="2-0">
+    </div>
+    <div class="form-group">
+      <label>胜者</label>
+      <select id="dmWinner">
+        <option value="p1">选手A</option>
+        <option value="p2">选手B</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>类型</label>
+      <select id="dmType">
+        <option value="ladder">擂台赛</option>
+        <option value="tournament">月赛</option>
+      </select>
+    </div>
+  `;
+  showModal('录入对局', html, () => {
+    const p1 = document.getElementById('dmPlayer1').value;
+    const p2 = document.getElementById('dmPlayer2').value;
+    const score = document.getElementById('dmScore').value;
+    const winner = document.getElementById('dmWinner').value;
+    const type = document.getElementById('dmType').value;
+
+    if (p1 === p2) { toast('不能和自己对战', 'error'); return; }
+    if (!score) { toast('请输入比分', 'error'); return; }
+
+    const match = {
+      id: gid(),
+      player1Id: p1,
+      player2Id: p2,
+      winnerId: winner === 'p1' ? p1 : p2,
+      score,
+      date: new Date().toISOString(),
+      type,
+      tournamentId: null,
+    };
+    STATE.matches.push(match);
+    updatePlayerStats(match);
+    saveData();
+    toast('✅ 对局已录入', 'success');
+    renderPage();
+  });
+}
+
+function deleteMatch(matchId) {
+  if (!confirm('确定删除此对局记录吗？选手数据也会回退。')) return;
+  STATE.matches = STATE.matches.filter(m => m.id !== matchId);
+  // Recalculate all player stats
+  STATE.players.forEach(p => { p.wins = 0; p.losses = 0; });
+  STATE.matches.forEach(m => updatePlayerStats(m));
+  saveData();
+  toast('已删除', 'info');
+  renderPage();
+}
+
+function exportHistory() {
+  const rows = [['日期','类型','选手A','选手B','比分','胜者']];
+  STATE.matches.sort((a,b) => new Date(b.date)-new Date(a.date)).forEach(m => {
+    rows.push([fmtDate(m.date), m.type, playerName(m.player1Id), playerName(m.player2Id), m.score, playerName(m.winnerId)]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `街霸战绩_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📥 CSV已下载', 'success');
+}
+
+// ============================================================
+// RULES (赛制规则)
+// ============================================================
+function renderRules(header, content) {
+  header.innerHTML = `
+    <div>
+      <div class="page-title">📖 赛制规则</div>
+      <div class="page-subtitle">街霸争霸赛 · 低频率 · 高参与 · 有仪式感</div>
+    </div>
+  `;
+
+  content.innerHTML = `
+    <div class="card rules-section">
+      <h3>🎯 核心理念</h3>
+      <p>我们理解大家工作繁忙，<strong style="color:var(--accent)">不需要每周都打</strong>。采用"月赛+擂台"双轨制，最大化灵活性和参与感。</p>
+      <ul>
+        <li><strong>月赛</strong>：每月1次正式比赛日，固定时间全员参与，有仪式感</li>
+        <li><strong>擂台</strong>：日常自由挑战，想打就打，纯自愿，赢一场赚10分</li>
+      </ul>
+    </div>
+
+    <div class="card rules-section">
+      <h3>📅 赛季结构</h3>
+      <ul>
+        <li><strong>赛季周期</strong>：每季度一个赛季（3个月）</li>
+        <li><strong>月赛频率</strong>：每月1次（通常为月末周五下午）</li>
+        <li><strong>擂台挑战</strong>：赛季全程开放，随时可发起</li>
+        <li><strong>赛季结算</strong>：赛季末根据总积分排名，决出赛季冠军</li>
+      </ul>
+    </div>
+
+    <div class="two-col">
+      <div class="card rules-section">
+        <h3>🏆 月赛规则</h3>
+        <ul>
+          <li>赛制：双败淘汰制（或根据人数调整）</li>
+          <li>对阵：根据擂台积分排名种子顺位</li>
+          <li>比赛：BO3（三局两胜），决赛BO5</li>
+          <li>胜负由双方确认或观战裁判判定</li>
+        </ul>
+      </div>
+
+      <div class="card rules-section">
+        <h3>⚔️ 擂台规则</h3>
+        <ul>
+          <li>可随时向排名高于自己的选手发起挑战</li>
+          <li>被挑战者需在3天内响应</li>
+          <li>挑战赛制：BO3（三局两胜）</li>
+          <li>双方自行约定时间，完成后录入结果</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card rules-section">
+      <h3>💰 积分体系</h3>
+      <table class="points-table">
+        <thead><tr><th>项目</th><th>积分</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>🏆 月赛冠军</td><td style="color:var(--accent);font-weight:700">+100</td><td>每月1人</td></tr>
+          <tr><td>🥈 月赛亚军</td><td style="color:var(--accent2);font-weight:700">+70</td><td>每月1人</td></tr>
+          <tr><td>🥉 月赛季军/四强</td><td style="color:var(--accent3);font-weight:700">+30</td><td>半决赛落败者</td></tr>
+          <tr><td>📋 月赛参与奖</td><td>+10</td><td>所有报名参赛者</td></tr>
+          <tr><td>⚔️ 擂台获胜</td><td>+10</td><td>每场擂台赛胜者</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card rules-section">
+      <h3>🎁 奖励机制</h3>
+      <ul>
+        <li><strong>月度冠军</strong>：「月度街霸之王」称号 + 小奖品</li>
+        <li><strong>赛季冠军</strong>：「赛季街霸之王」永久称号 + 实物大奖</li>
+        <li><strong>赛季MVP</strong>：擂台胜场最多者额外奖励</li>
+        <li><strong>最佳进步</strong>：赛季后期积分增长最快者</li>
+        <li><strong>参与全勤</strong>：所有月赛均参与的选手获得全勤奖</li>
+      </ul>
+    </div>
+
+    <div class="card rules-section">
+      <h3>📜 比赛规范</h3>
+      <ul>
+        <li>使用最新版本《街霸6》（或其他约定的街霸版本）</li>
+        <li>每场比赛前双方确认角色选择（可随时更换角色）</li>
+        <li>禁止使用明显bug或作弊手段</li>
+        <li>网络问题导致掉线：协商重赛或按当时比分判定</li>
+        <li>争议由联赛组委会（全员投票）裁定</li>
+        <li>友谊第一，比赛第二。禁止人身攻击，违规者扣分警告</li>
+      </ul>
+    </div>
+  `;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function updatePlayerStats(match) {
+  const p1 = getPlayer(match.player1Id);
+  const p2 = getPlayer(match.player2Id);
+  if (!p1 || !p2) return;
+  if (match.winnerId === match.player1Id) {
+    p1.wins++; p2.losses++;
+    if (match.type === 'ladder') p1.points += 10;
+  } else if (match.winnerId === match.player2Id) {
+    p2.wins++; p1.losses++;
+    if (match.type === 'ladder') p2.points += 10;
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  // Load state from server first
+  await apiLoad();
+  if (!STATE.seasons || STATE.seasons.length === 0) {
+    STATE.seasons = [{ id:'s1', name:'2026夏季赛', startDate:'2026-06-01', endDate:'2026-08-31', status:'active' }];
+    STATE.currentSeasonId = 's1';
+  }
+
+  // Recalculate stats from matches
+  STATE.players.forEach(p => { p.wins = 0; p.losses = 0; p.points = 0; });
+  STATE.matches.forEach(m => updatePlayerStats(m));
+
+  saveData();
+  renderSidebar();
+  renderPage();
+}
+
+init();
+</script>
+</body>
+</html>

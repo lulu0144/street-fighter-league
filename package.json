@@ -1,0 +1,12 @@
+{
+  "name": "street-fighter-league-shared",
+  "version": "1.0.0",
+  "description": "街霸争霸赛 · 团队内部联赛平台（共享版）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
