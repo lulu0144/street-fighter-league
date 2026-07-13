@@ -203,41 +203,5 @@
       "coins": 10
     }
   ],
-  "bets": [
-    {
-      "id": "id_1783932909021_hk5bwd",
-      "gameType": "challenge",
-      "gameRef": {
-        "challengeId": "id_1783932854488_at3j6f"
-      },
-      "player1Id": "p3",
-      "player2Id": "p5",
-      "player1Name": "美术大佬",
-      "player2Name": "测试侠",
-      "betType": "winner",
-      "createdBy": "system",
-      "createdDate": "2026-07-13T08:55:09.021Z",
-      "status": "open",
-      "predictions": {
-        "id_1783932840634_k3tt0p": {
-          "predictedWinnerId": "p5",
-          "predictedScore": "",
-          "sideBet": "可乐",
-          "matchedBy": []
-        },
-        "id_1783932966799_cv0aik": {
-          "predictedWinnerId": "p3",
-          "predictedScore": "",
-          "sideBet": "吃饭",
-          "matchedBy": []
-        },
-        "id_1783932961883_ul5wy1": {
-          "predictedWinnerId": "p3",
-          "predictedScore": "",
-          "sideBet": "",
-          "matchedBy": []
-        }
-      }
-    }
-  ]
+  "bets": []
 }
