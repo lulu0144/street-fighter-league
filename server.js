@@ -84,9 +84,18 @@ app.post('/api/state', (req, res) => {
   }
 });
 
-// Health check
+// Health check (supports keep-alive ping with secret token)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', players: STATE.players.length, matches: STATE.matches.length });
+});
+
+// Keep-alive endpoint (for cron-job.org to ping every 14 min)
+app.get('/ping', (req, res) => {
+  const token = process.env.KEEPALIVE_TOKEN;
+  if (token && req.query.token !== token) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  res.json({ pong: true, time: new Date().toISOString() });
 });
 
 // ---- Start ----
