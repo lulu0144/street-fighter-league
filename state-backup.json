@@ -203,5 +203,51 @@
       "coins": 10
     }
   ],
-  "bets": []
+  "bets": [
+    {
+      "id": "id_1783932909021_hk5bwd",
+      "gameType": "challenge",
+      "gameRef": {
+        "challengeId": "id_1783932854488_at3j6f"
+      },
+      "player1Id": "p3",
+      "player2Id": "p5",
+      "player1Name": "美术大佬",
+      "player2Name": "测试侠",
+      "betType": "winner",
+      "createdBy": "system",
+      "createdDate": "2026-07-13T08:55:09.021Z",
+      "status": "open",
+      "predictions": {
+        "id_1783932840634_k3tt0p": {
+          "predictedWinnerId": "p5",
+          "predictedScore": "",
+          "sideBet": "一杯可乐"
+        },
+        "id_1783932966799_cv0aik": {
+          "predictedWinnerId": "p5",
+          "predictedScore": "",
+          "sideBet": ""
+        }
+      }
+    },
+    {
+      "id": "id_1783932952429_ly791k",
+      "gameType": "tournament",
+      "gameRef": {
+        "tournamentId": "id_1783932885752_k33jxq",
+        "roundIdx": 2,
+        "matchIdx": 2
+      },
+      "player1Id": "p1",
+      "player2Id": "p6",
+      "player1Name": "策划大大",
+      "player2Name": "UI小姐姐",
+      "betType": "score",
+      "createdBy": "system",
+      "createdDate": "2026-07-13T08:55:52.429Z",
+      "status": "open",
+      "predictions": {}
+    }
+  ]
 }
