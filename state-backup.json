@@ -87,7 +87,7 @@
       "id": "id_1783932854488_at3j6f",
       "challengerId": "p3",
       "defenderId": "p5",
-      "status": "pending",
+      "status": "declined",
       "createdDate": "2026-07-13T08:54:14.488Z",
       "score": null,
       "winnerId": null
@@ -220,12 +220,20 @@
       "status": "open",
       "predictions": {
         "id_1783932840634_k3tt0p": {
-          "predictedWinnerId": "p5",
+          "predictedWinnerId": "p3",
           "predictedScore": "",
-          "sideBet": "一杯可乐",
-          "matchedBy": []
+          "sideBet": "可乐",
+          "matchedBy": [
+            "id_1783932961883_ul5wy1"
+          ]
         },
         "id_1783932966799_cv0aik": {
+          "predictedWinnerId": "p5",
+          "predictedScore": "",
+          "sideBet": "",
+          "matchedBy": []
+        },
+        "id_1783932961883_ul5wy1": {
           "predictedWinnerId": "p5",
           "predictedScore": "",
           "sideBet": "",
