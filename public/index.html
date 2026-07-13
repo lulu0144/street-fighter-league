@@ -1997,13 +1997,10 @@ function renderBetCard(bet) {
       }
       // Follow/unfollow buttons for other people's sideBets (open bets only)
       if (bet.status==='open' && bid!==myId && myId && pred.sideBet) {
-        const myPred = (bet.predictions||{})[myId];
-        if (myPred) {
-          if (mb.includes(myId)) {
-            h += '<button class="btn btn-outline btn-sm" onclick="unfollowSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px" title="取消跟注">🔕 取消</button>';
-          } else {
-            h += '<button class="btn btn-primary btn-sm" onclick="followSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px">🤝 跟上</button>';
-          }
+        if (mb.includes(myId)) {
+          h += '<button class="btn btn-outline btn-sm" onclick="unfollowSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px" title="取消跟注">🔕 取消</button>';
+        } else {
+          h += '<button class="btn btn-primary btn-sm" onclick="followSideBet(\''+bet.id+'\',\''+bid+'\')" style="margin-left:auto;font-size:10px">🤝 跟上</button>';
         }
       }
       if (bet.status==='open' && bid===myId) h += '<button class="btn btn-outline btn-sm" onclick="modifyPrediction(\''+bet.id+'\')" style="margin-left:auto;font-size:10px">修改</button>';
@@ -2124,8 +2121,6 @@ function followSideBet(betId, targetBettorId) {
   if (!bettors.length) { toast('请先注册竞猜者', 'info'); return; }
   const myId = bettors[0].id;
   if (myId === targetBettorId) { toast('不能跟自己跟注', 'error'); return; }
-  const myPred = (bet.predictions || {})[myId];
-  if (!myPred) { toast('请先参与竞猜再跟注', 'info'); return; }
   const targetPred = (bet.predictions || {})[targetBettorId];
   if (!targetPred || !targetPred.sideBet) { toast('该竞猜者没有口头赌注', 'info'); return; }
   targetPred.matchedBy = targetPred.matchedBy || [];
