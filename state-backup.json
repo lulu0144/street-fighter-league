@@ -1,16 +1,6 @@
 {
   "players": [
     {
-      "id": "p2",
-      "name": "程序一哥",
-      "character": "隆",
-      "avatar": "",
-      "wins": 0,
-      "losses": 0,
-      "points": 0,
-      "joinDate": "2026-07-13"
-    },
-    {
       "id": "p3",
       "name": "美术大佬",
       "character": "蛛俐",
@@ -90,7 +80,6 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p2",
         "p3",
         "p4",
         "p5",
@@ -133,7 +122,7 @@
             "matches": [
               {
                 "player1Id": "p3",
-                "player2Id": "p2",
+                "player2Id": null,
                 "winnerId": null,
                 "score": null
               },
