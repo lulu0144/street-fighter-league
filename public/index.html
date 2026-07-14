@@ -2049,7 +2049,7 @@ function renderBetCard(bet) {
 function showRegisterBettorModal() {
   const html = '<p style="margin-bottom:12px;color:var(--text-secondary)">注册后即可参与比赛竞猜，初始获得 <strong style="color:var(--accent)">10</strong> 竞猜币</p>'
     + '<div class="form-group"><label>你的昵称</label><input id="bettorName" placeholder="输入昵称"></div>';
-  showModal('注册竞猜者', html, () => {
+  showModal('注册竞猜者', html, async () => {
     const name = document.getElementById('bettorName').value.trim();
     if (!name) { toast('请输入昵称', 'error'); return; }
     STATE.bettors = STATE.bettors || [];
@@ -2058,15 +2058,15 @@ function showRegisterBettorModal() {
     const newId = STATE.bettors[STATE.bettors.length-1].id;
     currentBettorId = newId;
     localStorage.setItem('sfBetBettorId', newId);
-    saveData(); toast('🎲 注册成功！获得 10 竞猜币', 'success'); renderPage();
+    await saveData(); toast('🎲 注册成功！获得 10 竞猜币', 'success'); renderPage();
   });
 }
 
-function unregisterBettor(id) {
+async function unregisterBettor(id) {
   const b = getBettor(id);
   if (!b || !confirm('确定注销竞猜者「'+b.name+'」吗？竞猜记录将保留。')) return;
   STATE.bettors = (STATE.bettors || []).filter(bb => bb.id !== id);
-  saveData(); toast('已注销', 'info'); renderPage();
+  await saveData(); toast('已注销', 'info'); renderPage();
 }
 
 function showCreateBetModal() {
@@ -2076,7 +2076,7 @@ function showCreateBetModal() {
     + games.map(g => '<option value="'+g.id+'">'+g.label+'</option>').join('')
     + '</select></div><div class="form-group"><label>竞猜类型</label>'
     + '<select id="betType"><option value="winner">猜胜者</option><option value="score">猜比分</option></select></div>';
-  showModal('发起竞猜', html, () => {
+  showModal('发起竞猜', html, async () => {
     const gidVal = document.getElementById('betGame').value;
     const bt = document.getElementById('betType').value;
     const game = games.find(g => g.id === gidVal);
@@ -2093,7 +2093,7 @@ function showCreateBetModal() {
     });
     if (ex) { toast('该比赛已有开放竞猜', 'error'); return; }
     createBet(game.gameType, game.gameRef, game.player1Id, game.player2Id, bt);
-    saveData(); toast('🎲 竞猜已发起！', 'success'); renderPage();
+    await saveData(); toast('🎲 竞猜已发起！', 'success'); renderPage();
   });
 }
 
@@ -2130,7 +2130,7 @@ function showJoinBetModal(betId) {
     + (bet.betType === 'score' ? '<div class="form-group"><label>预测比分 (例如: 2-1)</label><input id="joinScore" placeholder="2-0 / 2-1 / 3-2 ..." value="2-0"></div>' : '')
     + '<div class="form-group"><label>口头赌注 (可选)</label><input id="joinSideBet" placeholder="例如: 一顿午餐、一杯奶茶..."></div>'
     + '<p style="font-size:11px;color:var(--text-muted);margin-top:4px">竞猜币规则：猜对 +1🪙 | 猜错 -1🪙 | 猜比分模式猜对 +2🪙，猜错 -1🪙</p>';
-  showModal('参与竞猜', html, () => {
+  showModal('参与竞猜', html, async () => {
     const bettorId = document.getElementById('joinBettor').value;
     bet.predictions = bet.predictions || {};
     // Preserve existing matchedBy if this bettor is re-joining
@@ -2141,11 +2141,11 @@ function showJoinBetModal(betId) {
       sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
       matchedBy: oldPred ? (oldPred.matchedBy || []) : [],
     };
-    saveData(); toast('✅ 竞猜已提交！', 'success'); renderPage();
+    await saveData(); toast('✅ 竞猜已提交！', 'success'); renderPage();
   });
 }
 
-function followSideBet(betId, targetBettorId) {
+async function followSideBet(betId, targetBettorId) {
   const bet = (STATE.bets || []).find(b => b.id === betId);
   if (!bet || bet.status !== 'open') { toast('竞猜已结算', 'info'); return; }
   if (!currentBettorId) { toast('请先在竞猜页面选择你的身份', 'info'); return; }
@@ -2160,10 +2160,10 @@ function followSideBet(betId, targetBettorId) {
   targetPred.matchedBy = targetPred.matchedBy || [];
   if (targetPred.matchedBy.includes(myId)) { toast('你已经跟过这个赌注了', 'info'); return; }
   targetPred.matchedBy.push(myId);
-  saveData(); toast('✅ 已跟上「'+targetPred.sideBet+'」', 'success'); renderPage();
+  await saveData(); toast('✅ 已跟上「'+targetPred.sideBet+'」', 'success'); renderPage();
 }
 
-function unfollowSideBet(betId, targetBettorId) {
+async function unfollowSideBet(betId, targetBettorId) {
   const bet = (STATE.bets || []).find(b => b.id === betId);
   if (!bet || bet.status !== 'open') { toast('竞猜已结算', 'info'); return; }
   if (!currentBettorId) return;
@@ -2171,7 +2171,7 @@ function unfollowSideBet(betId, targetBettorId) {
   const targetPred = (bet.predictions || {})[targetBettorId];
   if (!targetPred || !targetPred.matchedBy) return;
   targetPred.matchedBy = targetPred.matchedBy.filter(id => id !== myId);
-  saveData(); toast('已取消跟注', 'info'); renderPage();
+  await saveData(); toast('已取消跟注', 'info'); renderPage();
 }
 
 function modifyPrediction(betId) {
@@ -2187,7 +2187,7 @@ function modifyPrediction(betId) {
     + '</select></div>'
     + (bet.betType==='score' ? '<div class="form-group"><label>预测比分</label><input id="joinScore" value="'+(pred.predictedScore||'2-0')+'"></div>' : '')
     + '<div class="form-group"><label>口头赌注</label><input id="joinSideBet" value="'+(pred.sideBet||'')+'"></div>';
-  showModal('修改预测', html, () => {
+  showModal('修改预测', html, async () => {
     bet.predictions = bet.predictions || {};
     bet.predictions[myId] = {
       predictedWinnerId: document.getElementById('joinWinner').value,
@@ -2195,14 +2195,14 @@ function modifyPrediction(betId) {
       sideBet: document.getElementById('joinSideBet')?.value.trim() || '',
       matchedBy: pred.matchedBy || [],
     };
-    saveData(); toast('✅ 预测已更新', 'success'); renderPage();
+    await saveData(); toast('✅ 预测已更新', 'success'); renderPage();
   });
 }
 
-function deleteBet(betId) {
+async function deleteBet(betId) {
   if (!confirm('确定删除此竞猜吗？')) return;
   STATE.bets = (STATE.bets || []).filter(b => b.id !== betId);
-  saveData(); toast('竞猜已删除', 'info'); renderPage();
+  await saveData(); toast('竞猜已删除', 'info'); renderPage();
 }
 
 // ============================================================
