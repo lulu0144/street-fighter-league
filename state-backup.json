@@ -1,16 +1,6 @@
 {
   "players": [
     {
-      "id": "p1",
-      "name": "策划大大",
-      "character": "春丽",
-      "avatar": "",
-      "wins": 0,
-      "losses": 0,
-      "points": 0,
-      "joinDate": "2026-07-13"
-    },
-    {
       "id": "p2",
       "name": "程序一哥",
       "character": "隆",
@@ -100,7 +90,6 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p1",
         "p2",
         "p3",
         "p4",
@@ -155,7 +144,7 @@
                 "score": null
               },
               {
-                "player1Id": "p1",
+                "player1Id": null,
                 "player2Id": "p6",
                 "winnerId": null,
                 "score": null
