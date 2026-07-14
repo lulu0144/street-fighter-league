@@ -1,16 +1,6 @@
 {
   "players": [
     {
-      "id": "p7",
-      "name": "后台大佬",
-      "character": "桑吉尔夫",
-      "avatar": "",
-      "wins": 0,
-      "losses": 0,
-      "points": 0,
-      "joinDate": "2026-07-13"
-    },
-    {
       "id": "p8",
       "name": "数据分析师",
       "character": "本田",
@@ -40,7 +30,6 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p7",
         "p8"
       ],
       "bracket": {
@@ -83,7 +72,7 @@
                 "score": null
               },
               {
-                "player1Id": "p7",
+                "player1Id": null,
                 "player2Id": null,
                 "winnerId": null,
                 "score": null
