@@ -507,8 +507,8 @@ function showModal(title, contentHtml, onSave) {
       </div>
     </div>
   `;
-  document.getElementById('modalSaveBtn').addEventListener('click', () => {
-    if (onSave) onSave();
+  document.getElementById('modalSaveBtn').addEventListener('click', async () => {
+    if (onSave) await onSave();
     closeModal();
   });
 }
@@ -1835,12 +1835,12 @@ function showEditPlayerModal(playerId) {
       </select>
     </div>
   `;
-  showModal('编辑选手', html, () => {
+  showModal('编辑选手', html, async () => {
     p.name = document.getElementById('pName').value.trim();
     p.avatar = document.getElementById('pAvatar').value || '👤';
     p.character = document.getElementById('pCharacter').value;
     if (!p.name) { toast('姓名不能为空', 'error'); return; }
-    saveData();
+    await saveData();
     toast('✅ 选手已更新', 'success');
     renderPage();
   });
