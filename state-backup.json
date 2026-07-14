@@ -1,6 +1,66 @@
 {
   "players": [
     {
+      "id": "p1",
+      "name": "策划大大",
+      "character": "春丽",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p2",
+      "name": "程序一哥",
+      "character": "隆",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p3",
+      "name": "美术大佬",
+      "character": "蛛俐",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p4",
+      "name": "运营小哥",
+      "character": "肯",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p5",
+      "name": "测试侠",
+      "character": "古烈",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p6",
+      "name": "UI小姐姐",
+      "character": "嘉米",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
+    },
+    {
       "id": "p7",
       "name": "后台大佬",
       "character": "桑吉尔夫",
@@ -9,10 +69,30 @@
       "losses": 0,
       "points": 0,
       "joinDate": "2026-07-13"
+    },
+    {
+      "id": "p8",
+      "name": "数据分析师",
+      "character": "本田",
+      "avatar": "",
+      "wins": 0,
+      "losses": 0,
+      "points": 0,
+      "joinDate": "2026-07-13"
     }
   ],
   "matches": [],
-  "challenges": [],
+  "challenges": [
+    {
+      "id": "id_1783932854488_at3j6f",
+      "challengerId": "p3",
+      "defenderId": "p5",
+      "status": "pending",
+      "createdDate": "2026-07-13T08:54:14.488Z",
+      "score": null,
+      "winnerId": null
+    }
+  ],
   "tournaments": [
     {
       "id": "id_1783932885752_k33jxq",
@@ -20,7 +100,14 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p7"
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8"
       ],
       "bracket": {
         "rounds": [
@@ -56,26 +143,26 @@
             "label": "四分之一决赛",
             "matches": [
               {
-                "player1Id": null,
-                "player2Id": null,
+                "player1Id": "p3",
+                "player2Id": "p2",
                 "winnerId": null,
                 "score": null
               },
               {
                 "player1Id": "p7",
-                "player2Id": null,
+                "player2Id": "p5",
                 "winnerId": null,
                 "score": null
               },
               {
-                "player1Id": null,
-                "player2Id": null,
+                "player1Id": "p1",
+                "player2Id": "p6",
                 "winnerId": null,
                 "score": null
               },
               {
-                "player1Id": null,
-                "player2Id": null,
+                "player1Id": "p8",
+                "player2Id": "p4",
                 "winnerId": null,
                 "score": null
               }
@@ -117,6 +204,35 @@
     }
   ],
   "bets": [
+    {
+      "id": "id_1783932909021_hk5bwd",
+      "gameType": "challenge",
+      "gameRef": {
+        "challengeId": "id_1783932854488_at3j6f"
+      },
+      "player1Id": "p3",
+      "player2Id": "p5",
+      "player1Name": "美术大佬",
+      "player2Name": "测试侠",
+      "betType": "winner",
+      "createdBy": "system",
+      "createdDate": "2026-07-13T08:55:09.021Z",
+      "status": "open",
+      "predictions": {
+        "id_1783932840634_k3tt0p": {
+          "predictedWinnerId": "p5",
+          "predictedScore": "",
+          "sideBet": "一杯可乐",
+          "matchedBy": []
+        },
+        "id_1783932966799_cv0aik": {
+          "predictedWinnerId": "p5",
+          "predictedScore": "",
+          "sideBet": "",
+          "matchedBy": []
+        }
+      }
+    },
     {
       "id": "id_1783932952429_ly791k",
       "gameType": "tournament",
