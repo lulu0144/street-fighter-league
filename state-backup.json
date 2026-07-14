@@ -1,16 +1,6 @@
 {
   "players": [
     {
-      "id": "p3",
-      "name": "美术大佬",
-      "character": "蛛俐",
-      "avatar": "",
-      "wins": 0,
-      "losses": 0,
-      "points": 0,
-      "joinDate": "2026-07-13"
-    },
-    {
       "id": "p4",
       "name": "运营小哥",
       "character": "肯",
@@ -62,17 +52,7 @@
     }
   ],
   "matches": [],
-  "challenges": [
-    {
-      "id": "id_1783932854488_at3j6f",
-      "challengerId": "p3",
-      "defenderId": "p5",
-      "status": "pending",
-      "createdDate": "2026-07-13T08:54:14.488Z",
-      "score": null,
-      "winnerId": null
-    }
-  ],
+  "challenges": [],
   "tournaments": [
     {
       "id": "id_1783932885752_k33jxq",
@@ -80,7 +60,6 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p3",
         "p4",
         "p5",
         "p6",
@@ -121,7 +100,7 @@
             "label": "四分之一决赛",
             "matches": [
               {
-                "player1Id": "p3",
+                "player1Id": null,
                 "player2Id": null,
                 "winnerId": null,
                 "score": null
