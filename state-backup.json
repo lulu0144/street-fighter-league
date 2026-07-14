@@ -1,16 +1,6 @@
 {
   "players": [
     {
-      "id": "p6",
-      "name": "UI小姐姐",
-      "character": "嘉米",
-      "avatar": "",
-      "wins": 0,
-      "losses": 0,
-      "points": 0,
-      "joinDate": "2026-07-13"
-    },
-    {
       "id": "p7",
       "name": "后台大佬",
       "character": "桑吉尔夫",
@@ -50,7 +40,6 @@
       "date": "2026-07-13T00:00:00.000Z",
       "status": "active",
       "participants": [
-        "p6",
         "p7",
         "p8"
       ],
@@ -101,7 +90,7 @@
               },
               {
                 "player1Id": null,
-                "player2Id": "p6",
+                "player2Id": null,
                 "winnerId": null,
                 "score": null
               },
