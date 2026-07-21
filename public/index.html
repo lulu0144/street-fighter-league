@@ -401,9 +401,16 @@ async function saveData() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(STATE),
     });
-    if (!res.ok) throw new Error('Save failed');
+    if (!res.ok) {
+      let msg = '保存失败';
+      try {
+        const err = await res.json();
+        msg = err.error || msg;
+      } catch (_) {}
+      throw new Error(msg);
+    }
   } catch(e) {
-    toast('⚠️ 保存失败，请检查网络连接', 'error');
+    toast('⚠️ ' + e.message, 'error');
     console.error('Save error:', e);
   }
 }
